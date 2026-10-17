@@ -1,0 +1,35 @@
+# Secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# Datos locales
+dumps/
+*.dump
+*.sql.gz
+ai-service/chroma_data/
+pgdata/
+
+# Go
+backend/bin/
+*.test
+coverage.out
+
+# Node
+node_modules/
+frontend/dist/
+
+# Python
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store

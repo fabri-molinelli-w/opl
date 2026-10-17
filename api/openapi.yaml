@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: OPL API
+  version: 0.1.0
+  description: |
+    API del backend de OPL (Operations Pilot Library).
+    Fuente única de verdad: el código del servidor Go (oapi-codegen) y el cliente
+    del frontend (Orval) se generan desde este archivo. Editar acá primero.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: system
+  - name: auth
+
+paths:
+  /api/health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Estado del backend y de sus dependencias
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
+  # y el skill endpoint-spec-first.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Health:
+      type: object
+      required: [status, database]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        database:
+          type: string
+          enum: [up, down]
+        version:
+          type: string
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: validation_error
+        message:
+          type: string
+          example: El campo ip no es una dirección válida
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+
+    ErrorDetail:
+      type: object
+      required: [field, issue]
+      properties:
+        field:
+          type: string
+        issue:
+          type: string
+
+    Role:
+      type: string
+      enum: [admin, sysadmin, soporte]
+
+    Environment:
+      type: string
+      enum: [prod, staging, dev]
+
+    ServiceStatus:
+      type: string
+      enum: [UP, DOWN, DEGRADED, UNKNOWN]
+
+    Severity:
+      type: string
+      enum: [SEV1, SEV2, SEV3, SEV4]
+
+  responses:
+    BadRequest:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: No autenticado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: El rol no tiene permiso
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Recurso inexistente
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflicto (duplicado o transición inválida)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+security:
+  - bearerAuth: []

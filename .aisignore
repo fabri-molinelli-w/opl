@@ -1,0 +1,29 @@
+# .aisignore — recursos que NINGÚN agente de IA debe leer ni indexar.
+# OpenCode no lee este archivo de forma nativa: las mismas reglas están aplicadas
+# como "deny" en la sección permission.read de opencode.json (ver README).
+
+# Credenciales y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+*.p12
+
+# Datos persistentes y volcados
+dumps/
+*.dump
+*.sql.gz
+pgdata/
+ai-service/chroma_data/
+
+# Dependencias y builds (saturan el contexto sin aportar)
+node_modules/
+frontend/dist/
+backend/bin/
+.venv/
+__pycache__/
+
+# Volúmenes de Docker
+docker-volumes/

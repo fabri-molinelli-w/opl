@@ -1,0 +1,97 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "instructions": [
+    "backend/AGENTS.md",
+    "frontend/AGENTS.md",
+    "ai-service/AGENTS.md"
+  ],
+
+  "lsp": true,
+  "formatter": true,
+
+  "watcher": {
+    "ignore": [
+      "**/gen/**",
+      "ai-service/chroma_data/**",
+      "**/.venv/**"
+    ]
+  },
+
+  "permission": {
+    "edit": "ask",
+    "webfetch": "ask",
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "*.pem": "deny",
+      "*.key": "deny",
+      "*id_rsa*": "deny",
+      "*.dump": "deny",
+      "dumps/*": "deny",
+      "ai-service/chroma_data/*": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "ls*": "allow",
+      "go vet*": "allow",
+      "go test*": "allow",
+      "go build*": "allow",
+      "golangci-lint*": "allow",
+      "make generate*": "allow",
+      "make verify*": "allow",
+      "npm run lint*": "allow",
+      "npm run typecheck*": "allow",
+      "npm run test*": "allow",
+      "ruff*": "allow",
+      "mypy*": "allow",
+      "pytest*": "allow",
+      "git push*": "deny",
+      "rm -rf*": "deny",
+      "docker compose down -v*": "deny",
+      "cat *.env*": "deny"
+    }
+  },
+
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_PAT}",
+        "X-MCP-Toolsets": "repos,issues,pull_requests,actions"
+      }
+    },
+
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        "/home/fabrizio/Documentos/Proyectos/Desarrollo/OPL"
+      ],
+      "enabled": true
+    },
+
+    "memory": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-memory"],
+      "enabled": true,
+      "environment": {
+        "MEMORY_FILE_PATH": "/home/fabrizio/Documentos/Proyectos/Desarrollo/OPL/.opencode/memory.jsonl"
+      }
+    }
+  }
+}
