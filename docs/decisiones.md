@@ -58,3 +58,8 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Fecha:** 2026-10-17
 - **Decisión:** el destino de producción es un servidor Debian de la empresa con Docker Compose, accesible solo desde la red interna.
 - **Motivo:** el mismo `docker-compose` del desarrollo se reutiliza; no hay dependencias de servicios cloud obligatorios.
+
+## ADR-012 · Node 24 LTS para el frontend
+- **Fecha:** 2026-10-18
+- **Decisión:** Node 24 LTS vía nvm en desarrollo e imagen node:24 en Docker.
+- **Motivo:** Node 20 (el de Debian 13) está fuera de soporte desde abril 2026 y las versiones actuales de Orval y Vitest ya no lo soportan. Node 24 tiene soporte hasta abril 2028.
