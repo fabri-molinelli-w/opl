@@ -26,7 +26,7 @@ func newTestRouter(t *testing.T, p Pinger) http.Handler {
 	t.Helper()
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	r := chi.NewRouter()
-	gen.HandlerFromMux(gen.NewStrictHandler(NewServer(p, log), nil), r)
+	gen.HandlerFromMux(gen.NewStrictHandler(NewServer(p, nil, nil, log), nil), r)
 	return r
 }
 

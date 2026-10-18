@@ -63,3 +63,13 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Fecha:** 2026-10-18
 - **Decisión:** Node 24 LTS vía nvm en desarrollo e imagen node:24 en Docker.
 - **Motivo:** Node 20 (el de Debian 13) está fuera de soporte desde abril 2026 y las versiones actuales de Orval y Vitest ya no lo soportan. Node 24 tiene soporte hasta abril 2028.
+
+## ADR-013 · Autorización centralizada por operationID con default-deny
+- **Fecha:** 2026-10-18
+- **Decisión:** un único middleware de autorización (`internal/auth`) recibe el `operationID` que oapi-codegen (strict) pasa a cada `StrictMiddlewareFunc` y aplica una `Policy` que mapea cada operación de `api/openapi.yaml` a su mínimo rol (`x-min-role`). La allowlist pública (`getHealth`, `login`) es explícita y toda operación sin entrada se deniega (default-deny). El middleware revalida además el usuario en cada request.
+- **Motivo:** evita chequeos de rol dispersos por handler y que un endpoint nuevo quede abierto por olvido; el contrato es el único lugar donde se declara el rol mínimo. La revalidación permite rechazar a un usuario desactivado aunque su token siga vigente (RN-3).
+
+## ADR-014 · Sesión del frontend con JWT en sessionStorage
+- **Fecha:** 2026-10-18
+- **Decisión:** el frontend guarda el JWT y el usuario en `sessionStorage`. El cliente HTTP (`src/api/http.ts`) adjunta el token y, ante un 401 con token presente, limpia la sesión y redirige a `/login`. Al recargar la app, `AuthContext` revalida la sesión con `GET /api/auth/me`.
+- **Motivo:** la sesión vive por pestaña y no persiste más de lo necesario (a diferencia de `localStorage`); la revalidación contra el backend hace que un usuario desactivado pierda el acceso sin esperar a que expire el token.
