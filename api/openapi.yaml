@@ -26,6 +26,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Health"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
@@ -117,6 +119,10 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
-
+    ServiceUnavailable:
+      description: Backend operativo pero con dependencias caídas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Health" }
 security:
   - bearerAuth: []

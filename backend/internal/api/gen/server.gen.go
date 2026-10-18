@@ -192,6 +192,9 @@ type Forbidden = Error
 // NotFound defines model for NotFound.
 type NotFound = Error
 
+// ServiceUnavailable defines model for ServiceUnavailable.
+type ServiceUnavailable = Health
+
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
@@ -363,6 +366,8 @@ type ForbiddenJSONResponse Error
 
 type NotFoundJSONResponse Error
 
+type ServiceUnavailableJSONResponse Health
+
 type UnauthorizedJSONResponse Error
 
 type GetHealthRequestObject struct {
@@ -382,6 +387,20 @@ func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHealth503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response GetHealth503JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
