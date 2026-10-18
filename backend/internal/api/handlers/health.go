@@ -2,26 +2,10 @@ package handlers
 
 import (
 	"context"
-	"log/slog"
 
 	gen "github.com/fabri-molinelli-w/opl/backend/internal/api/gen"
 	"github.com/go-chi/chi/v5/middleware"
 )
-
-// Pinger is the subset of *pgxpool.Pool used by the health handler.
-type Pinger interface {
-	Ping(ctx context.Context) error
-}
-
-// Server implements api.StrictServerInterface for the OPL backend.
-type Server struct {
-	db  Pinger
-	log *slog.Logger
-}
-
-func NewServer(db Pinger, log *slog.Logger) *Server {
-	return &Server{db: db, log: log}
-}
 
 func (s *Server) GetHealth(ctx context.Context, _ gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
 	reqID := middleware.GetReqID(ctx)

@@ -1,10 +1,7 @@
+import { clearSession, getToken } from '@/auth/session'
+import { redirectToLogin } from '@/auth/redirect'
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-
-let authToken: string | null = null
-
-export const setAuthToken = (token: string | null): void => {
-  authToken = token
-}
 
 export class ApiError extends Error {
   readonly status: number
@@ -17,6 +14,9 @@ export class ApiError extends Error {
     this.data = data
   }
 }
+
+export const isApiError = (value: unknown): value is ApiError =>
+  value instanceof ApiError
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -32,12 +32,14 @@ export const customInstance = async <T>(
   url: string,
   options: RequestInit = {},
 ): Promise<T> => {
+  const token = getToken()
+
   const response = await fetch(`${BASE_URL}${url}`, {
     ...options,
     headers: {
       Accept: 'application/json',
       ...(options.body != null ? { 'Content-Type': 'application/json' } : {}),
-      ...(authToken !== null ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   })
@@ -46,7 +48,13 @@ export const customInstance = async <T>(
   const data: unknown = text.length > 0 ? JSON.parse(text) : undefined
 
   if (!response.ok && response.status !== 503) {
-    throw new ApiError(response.status, extractMessage(data), data)
+    if (response.status === 401 && token !== null) {
+      clearSession()
+      redirectToLogin()
+    }
+    const message =
+      response.status === 403 ? 'No tenés permisos' : extractMessage(data)
+    throw new ApiError(response.status, message, data)
   }
 
   return { data, status: response.status, headers: response.headers } as T

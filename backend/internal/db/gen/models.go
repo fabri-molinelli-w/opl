@@ -3,3 +3,18 @@
 //   sqlc v1.31.1
 
 package gen
+
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type User struct {
+	ID           pgtype.UUID
+	Email        string
+	Name         string
+	PasswordHash string
+	Role         string
+	Active       bool
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}

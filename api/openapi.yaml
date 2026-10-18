@@ -11,6 +11,7 @@ servers:
 tags:
   - name: system
   - name: auth
+  - name: users
 
 paths:
   /api/health:
@@ -28,6 +29,145 @@ paths:
                 $ref: "#/components/schemas/Health"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Inicia sesión y devuelve un JWT
+      security: []
+      x-min-role: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: Datos del usuario autenticado
+      x-min-role: soporte
+      responses:
+        "200":
+          description: Usuario actual
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/me/password:
+    post:
+      tags: [auth]
+      operationId: changeOwnPassword
+      summary: Cambia la contraseña del usuario autenticado
+      x-min-role: soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Contraseña actualizada
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: Lista los usuarios
+      x-min-role: admin
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [users]
+      operationId: createUser
+      summary: Crea un usuario
+      x-min-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/users/{id}:
+    patch:
+      tags: [users]
+      operationId: updateUser
+      summary: Actualiza un usuario (nombre, email, rol, estado)
+      x-min-role: admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
@@ -80,6 +220,86 @@ components:
     Role:
       type: string
       enum: [admin, sysadmin, soporte]
+
+    User:
+      type: object
+      required: [id, email, name, role, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    CreateUserRequest:
+      type: object
+      required: [email, name, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        role:
+          $ref: "#/components/schemas/Role"
+
+    UpdateUserRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/Role"
+        active:
+          type: boolean
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
 
     Environment:
       type: string

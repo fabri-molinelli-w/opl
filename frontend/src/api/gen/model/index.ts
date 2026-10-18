@@ -10,7 +10,9 @@
  */
 
 export * from './badRequestResponse.ts';
+export * from './changePasswordRequest.ts';
 export * from './conflictResponse.ts';
+export * from './createUserRequest.ts';
 export * from './environment.ts';
 export * from './error.ts';
 export * from './errorDetail.ts';
@@ -18,9 +20,13 @@ export * from './forbiddenResponse.ts';
 export * from './health.ts';
 export * from './healthDatabase.ts';
 export * from './healthStatus.ts';
+export * from './loginRequest.ts';
+export * from './loginResponse.ts';
 export * from './notFoundResponse.ts';
 export * from './role.ts';
 export * from './serviceStatus.ts';
 export * from './serviceUnavailableResponse.ts';
 export * from './severity.ts';
 export * from './unauthorizedResponse.ts';
+export * from './updateUserRequest.ts';
+export * from './user.ts';

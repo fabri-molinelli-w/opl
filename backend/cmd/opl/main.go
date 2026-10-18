@@ -14,7 +14,11 @@ import (
 	"github.com/fabri-molinelli-w/opl/backend/db"
 	api "github.com/fabri-molinelli-w/opl/backend/internal/api/gen"
 	"github.com/fabri-molinelli-w/opl/backend/internal/api/handlers"
+	"github.com/fabri-molinelli-w/opl/backend/internal/auth"
 	"github.com/fabri-molinelli-w/opl/backend/internal/config"
+	dbgen "github.com/fabri-molinelli-w/opl/backend/internal/db/gen"
+	"github.com/fabri-molinelli-w/opl/backend/internal/repository"
+	"github.com/fabri-molinelli-w/opl/backend/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -59,8 +63,23 @@ func run(log *slog.Logger) error {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
-	strict := handlers.NewServer(pool, log)
-	api.HandlerFromMux(api.NewStrictHandler(strict, nil), r)
+	userRepo := repository.NewUserRepository(dbgen.New(pool))
+	tokens := auth.NewTokenIssuer(cfg.JWTSecret, cfg.JWTTTL)
+	authService := service.NewAuthService(userRepo, tokens, log)
+	userService := service.NewUserService(userRepo, log)
+
+	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
+		return fmt.Errorf("failed to bootstrap admin user: %w", err)
+	}
+
+	strict := handlers.NewServer(pool, authService, userService, log)
+	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)
+	strictHandler := api.NewStrictHandlerWithOptions(
+		strict,
+		[]api.StrictMiddlewareFunc{authorize},
+		handlers.NewStrictOptions(log),
+	)
+	api.HandlerFromMux(strictHandler, r)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,

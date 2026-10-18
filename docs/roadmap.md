@@ -21,7 +21,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 
 | Estado | CU | Tarea |
 |---|---|---|
-| ⬜ | CU-01 | Login, roles (admin / sysadmin / soporte), gestión de usuarios |
+| ✅ | CU-01 | Login, roles (admin / sysadmin / soporte), gestión de usuarios |
 | ⬜ | CU-02 | Inventario: primero servidores, después servicios |
 | ⬜ | CU-05 | Documentación: ABM + búsqueda + categorías y etiquetas |
 | ⬜ | CU-05 | Documentación: historial de versiones + vínculos con el inventario |

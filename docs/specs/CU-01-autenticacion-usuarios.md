@@ -17,7 +17,7 @@ La aplicación está orientada a los equipos de **Soporte IT** y **SysAdmin**.
 |---|---|---|
 | `admin` | Responsable de la plataforma | Todo lo de `sysadmin` + gestión de usuarios y configuración |
 | `sysadmin` | Administración de servidores | Todo lo de `soporte` + ABM de inventario, health checks, certificados y deploys |
-| `soporte` | Soporte IT / mesa de ayuda | Ver todo el sistema; crear y editar **documentación**; crear y gestionar **incidentes**; usar OPLBot |
+| `soporte` | Soporte IT / mesa de ayuda | Ver todo el sistema; crear y editar **documentación**; crear y gestionar **incidentes**; usar OPSBot |
 
 Jerarquía: `admin` > `sysadmin` > `soporte`. Un rol superior puede todo lo que puede uno inferior.
 
@@ -52,11 +52,14 @@ Jerarquía: `admin` > `sysadmin` > `soporte`. Un rol superior puede todo lo que 
 - "Mi cuenta": cambio de contraseña.
 
 ## Criterios de aceptación
-- [ ] CA-1 Login correcto devuelve token; incorrecto devuelve 401 sin indicar si falló el email o la contraseña.
+- [x] CA-1 Login correcto devuelve token; incorrecto devuelve 401 sin indicar si falló el email o la contraseña.
 - [ ] CA-2 Un usuario `soporte` que intenta crear un servidor recibe 403 y no ve el botón.
+      *(diferido a CU-02: aún no existe el endpoint de servidores. El control de rol y el ocultamiento del botón
+      se cubren de forma genérica en `middleware_test.go::TestProtectedEndpoints_AuthMatrix` y `AppLayout.test.tsx`.)*
 - [ ] CA-3 Un usuario `soporte` puede crear y editar documentación.
-- [ ] CA-4 La contraseña en base está hasheada con bcrypt.
-- [ ] CA-5 Un usuario desactivado no puede loguearse.
+      *(diferido a CU-05: aún no existe el módulo de documentación.)*
+- [x] CA-4 La contraseña en base está hasheada con bcrypt.
+- [x] CA-5 Un usuario desactivado no puede loguearse.
 
 ## Fuera de alcance (por ahora)
 Login con Active Directory / LDAP, recuperación de contraseña por email, SSO.
