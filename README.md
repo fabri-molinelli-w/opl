@@ -1,5 +1,7 @@
 # OPL — Operations Pilot Library
 
+[![CI](https://github.com/fabri-molinelli-w/opl/actions/workflows/ci.yml/badge.svg)](https://github.com/fabri-molinelli-w/opl/actions/workflows/ci.yml)
+
 Portal de operaciones de infraestructura con asistente IA (OPLBot).
 Trabajo Práctico Integrador · Desarrollo de Software y Arquitectura con IA · Grupo 17
 
