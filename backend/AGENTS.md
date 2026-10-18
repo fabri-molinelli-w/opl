@@ -47,6 +47,7 @@ backend/
 - Baja lógica con `deleted_at timestamptz null`; las queries de listado filtran `deleted_at is null`.
 - Enums como `text` + `CHECK` (más simple de migrar que `CREATE TYPE`).
 - Una migración nunca se edita después de commiteada: se crea una nueva.
+- - Las migraciones se embeben desde backend/db/embed.go (package db, `db.Migrations`). Nunca usar //go:embed con rutas que contengan "..".
 
 ## Concurrencia (scheduler)
 
