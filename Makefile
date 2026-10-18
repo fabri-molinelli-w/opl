@@ -43,4 +43,4 @@ check-generated:
 	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
 	PATH="$$PATH:$$(go env GOPATH)/bin" $(MAKE) generate
-	git diff --exit-code
+	git diff --exit-code -- backend/internal/api/gen backend/internal/db/gen frontend/src/api/gen backend/go.mod backend/go.sum

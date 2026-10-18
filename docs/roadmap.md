@@ -15,7 +15,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 | ✅ | 0.4 | Esqueleto backend: chi, config, slog, conexión a Postgres, goose, `GET /api/health` |
 | ✅ | 0.5 | Generación: oapi-codegen + sqlc + Makefile (`make generate`, `make verify`) |
 | ✅ | 0.6 | Esqueleto frontend: Vite, Tailwind, Router, TanStack Query, Orval, layout con menú lateral |
-| ⬜ | 0.7 | CI en GitHub Actions (lint + tests backend y frontend) |
+| ✅ | 0.7 | CI en GitHub Actions (lint + tests backend y frontend) |
 
 ## Fase 1 — Documentación y dashboard (foco actual)
 
