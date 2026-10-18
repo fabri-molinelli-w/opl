@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
+package: api
+generate:
+  chi-server: true    # ServerInterface + HandlerFromMux sobre chi v5
+  strict-server: true # StrictServerInterface con tipos estrictos de request/response
+  models: true        # Health, Error, Role, enums, ...
+output-options:
+  # Genera todos los schemas del contrato aunque hoy solo Health esté referenciado
+  skip-prune: true
+output: internal/api/gen/server.gen.go

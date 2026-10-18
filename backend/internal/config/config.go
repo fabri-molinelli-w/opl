@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrMissingHTTPPort     = errors.New("missing required env var: HTTP_PORT")
-	ErrMissingDatabaseURL  = errors.New("missing required env var: DATABASE_URL")
+	ErrMissingHTTPPort    = errors.New("missing required env var: HTTP_PORT")
+	ErrMissingDatabaseURL = errors.New("missing required env var: DATABASE_URL")
 )
 
 type Config struct {

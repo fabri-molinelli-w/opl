@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,8 +12,9 @@ import (
 	"time"
 
 	"github.com/fabri-molinelli-w/opl/backend/db"
+	api "github.com/fabri-molinelli-w/opl/backend/internal/api/gen"
+	"github.com/fabri-molinelli-w/opl/backend/internal/api/handlers"
 	"github.com/fabri-molinelli-w/opl/backend/internal/config"
-	"github.com/fabri-molinelli-w/opl/backend/internal/health"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,11 +24,16 @@ import (
 
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	if err := run(log); err != nil {
+		log.Error("fatal error", "error", err)
+		os.Exit(1)
+	}
+}
 
+func run(log *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Error("failed to load config", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -34,19 +41,16 @@ func main() {
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Error("failed to create database pool", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to create database pool: %w", err)
 	}
 	defer pool.Close()
 
 	if err := pool.Ping(ctx); err != nil {
-		log.Error("failed to ping database", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	if err := applyMigrations(ctx, pool, log); err != nil {
-		log.Error("failed to apply migrations", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
 
 	r := chi.NewRouter()
@@ -55,8 +59,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
-	healthHandler := health.NewHandler(pool, log)
-	r.Get("/api/health", healthHandler.ServeHTTP)
+	strict := handlers.NewServer(pool, log)
+	api.HandlerFromMux(api.NewStrictHandler(strict, nil), r)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
@@ -81,18 +85,24 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Error("server shutdown failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("server shutdown failed: %w", err)
 	}
 	log.Info("server stopped")
+	return nil
 }
 
 func applyMigrations(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
 	dbConn := stdlib.OpenDBFromPool(pool)
-	defer dbConn.Close()
+	defer func() {
+		if err := dbConn.Close(); err != nil {
+			log.Warn("failed to close migration connection", "error", err)
+		}
+	}()
 
 	goose.SetBaseFS(db.Migrations)
-	goose.SetDialect("postgres")
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set goose dialect: %w", err)
+	}
 
 	if err := goose.UpContext(ctx, dbConn, "migrations"); err != nil {
 		return err

@@ -1,4 +1,4 @@
-# 01 · docker-compose con PostgreSQL
+# 01 · Esqueleto backend
 
 - **Fecha:** 2026-10-18
 - **Caso de uso / tarea:** 0.4 — Esqueleto backend: chi, config, slog, conexión a Postgres, goose, `GET /api/health`
