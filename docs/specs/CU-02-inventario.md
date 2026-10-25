@@ -26,7 +26,7 @@ ABM y consulta de servidores y de los servicios que corren en ellos, con búsque
 ## Endpoints
 | Método | Ruta | Rol mínimo | Notas |
 |---|---|---|---|
-| GET | /api/servers | soporte | filtros `q`, `environment`, `os`, `tag`, `status` |
+| GET | /api/servers | soporte | filtros `q`, `environment`, `os`, `tag` |
 | POST | /api/servers | sysadmin | 201, 400, 409 |
 | GET | /api/servers/{id} | soporte | incluye sus servicios |
 | PATCH | /api/servers/{id} | sysadmin | |
