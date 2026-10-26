@@ -12,7 +12,7 @@ import (
 )
 
 type fakeDocumentRepo struct {
-	state       DocumentState
+	state       domain.DocumentState
 	created     domain.NewDocument
 	createErr   error
 	updateErr   error
@@ -25,7 +25,7 @@ func (f *fakeDocumentRepo) CreateDocument(_ context.Context, doc domain.NewDocum
 	if f.createErr != nil {
 		return "", f.createErr
 	}
-	f.state = DocumentState{Title: doc.Title, ContentMD: doc.ContentMD, Category: doc.Category, Tags: doc.Tags, Version: 1}
+	f.state = domain.DocumentState{Title: doc.Title, ContentMD: doc.ContentMD, Category: doc.Category, Tags: doc.Tags, Version: 1}
 	return "doc-1", nil
 }
 
@@ -39,7 +39,7 @@ func (f *fakeDocumentRepo) GetDocumentByID(_ context.Context, id string) (domain
 	}, nil
 }
 
-func (f *fakeDocumentRepo) UpdateDocument(_ context.Context, id, _ string, apply func(DocumentState) (DocumentState, error)) error {
+func (f *fakeDocumentRepo) UpdateDocument(_ context.Context, id, _ string, apply func(domain.DocumentState) (domain.DocumentState, error)) error {
 	f.updateCalls++
 	if id != "doc-1" {
 		return domain.ErrNotFound

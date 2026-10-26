@@ -35,6 +35,51 @@ func (e CheckType) Valid() bool {
 	}
 }
 
+// Defines values for DocumentCategory.
+const (
+	Configuracion DocumentCategory = "configuracion"
+	Guia          DocumentCategory = "guia"
+	Procedimiento DocumentCategory = "procedimiento"
+	Referencia    DocumentCategory = "referencia"
+	Runbook       DocumentCategory = "runbook"
+)
+
+// Valid indicates whether the value is a known member of the DocumentCategory enum.
+func (e DocumentCategory) Valid() bool {
+	switch e {
+	case Configuracion:
+		return true
+	case Guia:
+		return true
+	case Procedimiento:
+		return true
+	case Referencia:
+		return true
+	case Runbook:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocumentSort.
+const (
+	Title     DocumentSort = "title"
+	UpdatedAt DocumentSort = "updatedAt"
+)
+
+// Valid indicates whether the value is a known member of the DocumentSort enum.
+func (e DocumentSort) Valid() bool {
+	switch e {
+	case Title:
+		return true
+	case UpdatedAt:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Environment.
 const (
 	Dev     Environment = "dev"
@@ -203,6 +248,24 @@ func (e Severity) Valid() bool {
 	}
 }
 
+// Defines values for SortOrder.
+const (
+	Asc  SortOrder = "asc"
+	Desc SortOrder = "desc"
+)
+
+// Valid indicates whether the value is a known member of the SortOrder enum.
+func (e SortOrder) Valid() bool {
+	switch e {
+	case Asc:
+		return true
+	case Desc:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangePasswordRequest defines model for ChangePasswordRequest.
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword"`
@@ -211,6 +274,14 @@ type ChangePasswordRequest struct {
 
 // CheckType defines model for CheckType.
 type CheckType string
+
+// CreateDocumentRequest defines model for CreateDocumentRequest.
+type CreateDocumentRequest struct {
+	Category  DocumentCategory `json:"category"`
+	ContentMd string           `json:"contentMd"`
+	Tags      *[]string        `json:"tags,omitempty"`
+	Title     string           `json:"title"`
+}
 
 // CreateServerRequest defines model for CreateServerRequest.
 type CreateServerRequest struct {
@@ -242,6 +313,61 @@ type CreateUserRequest struct {
 	Name     string              `json:"name"`
 	Password string              `json:"password"`
 	Role     Role                `json:"role"`
+}
+
+// Document defines model for Document.
+type Document struct {
+	Category DocumentCategory `json:"category"`
+
+	// ContentMd Contenido en Markdown (se renderiza sin HTML crudo)
+	ContentMd     string    `json:"contentMd"`
+	CreatedAt     time.Time `json:"createdAt"`
+	CreatedByName string    `json:"createdByName"`
+	Id            string    `json:"id"`
+	Tags          []string  `json:"tags"`
+	Title         string    `json:"title"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	UpdatedByName string    `json:"updatedByName"`
+
+	// Version Versión actual; se envía en el PATCH para el bloqueo optimista
+	Version int `json:"version"`
+}
+
+// DocumentCategory defines model for DocumentCategory.
+type DocumentCategory string
+
+// DocumentSort defines model for DocumentSort.
+type DocumentSort string
+
+// DocumentSummary defines model for DocumentSummary.
+type DocumentSummary struct {
+	Category      DocumentCategory `json:"category"`
+	CreatedAt     time.Time        `json:"createdAt"`
+	Id            string           `json:"id"`
+	Tags          []string         `json:"tags"`
+	Title         string           `json:"title"`
+	UpdatedAt     time.Time        `json:"updatedAt"`
+	UpdatedByName string           `json:"updatedByName"`
+	Version       int              `json:"version"`
+}
+
+// DocumentVersion defines model for DocumentVersion.
+type DocumentVersion struct {
+	Category     DocumentCategory `json:"category"`
+	ContentMd    string           `json:"contentMd"`
+	CreatedAt    time.Time        `json:"createdAt"`
+	EditedByName string           `json:"editedByName"`
+	Tags         []string         `json:"tags"`
+	Title        string           `json:"title"`
+	Version      int              `json:"version"`
+}
+
+// DocumentVersionSummary defines model for DocumentVersionSummary.
+type DocumentVersionSummary struct {
+	CreatedAt    time.Time `json:"createdAt"`
+	EditedByName string    `json:"editedByName"`
+	Title        string    `json:"title"`
+	Version      int       `json:"version"`
 }
 
 // Environment defines model for Environment.
@@ -289,6 +415,14 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+// PaginatedDocuments defines model for PaginatedDocuments.
+type PaginatedDocuments struct {
+	Items    []DocumentSummary `json:"items"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"pageSize"`
+	Total    int64             `json:"total"`
 }
 
 // PaginatedServers defines model for PaginatedServers.
@@ -356,6 +490,20 @@ type ServiceType string
 
 // Severity defines model for Severity.
 type Severity string
+
+// SortOrder defines model for SortOrder.
+type SortOrder string
+
+// UpdateDocumentRequest defines model for UpdateDocumentRequest.
+type UpdateDocumentRequest struct {
+	Category  *DocumentCategory `json:"category,omitempty"`
+	ContentMd *string           `json:"contentMd,omitempty"`
+	Tags      *[]string         `json:"tags,omitempty"`
+	Title     *string           `json:"title,omitempty"`
+
+	// Version Versión que se editó. Si no coincide con la actual → 409.
+	Version *int `json:"version,omitempty"`
+}
 
 // UpdateServerRequest defines model for UpdateServerRequest.
 type UpdateServerRequest struct {
@@ -426,6 +574,19 @@ type ServiceUnavailable = Health
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
+// ListDocumentsParams defines parameters for ListDocuments.
+type ListDocumentsParams struct {
+	Page     *Page     `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *PageSize `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// Q Texto a buscar en título, contenido y etiquetas
+	Q        *string           `form:"q,omitempty" json:"q,omitempty"`
+	Category *DocumentCategory `form:"category,omitempty" json:"category,omitempty"`
+	Tag      *string           `form:"tag,omitempty" json:"tag,omitempty"`
+	Sort     *DocumentSort     `form:"sort,omitempty" json:"sort,omitempty"`
+	Order    *SortOrder        `form:"order,omitempty" json:"order,omitempty"`
+}
+
 // ListServersParams defines parameters for ListServers.
 type ListServersParams struct {
 	Page        *Page        `form:"page,omitempty" json:"page,omitempty"`
@@ -451,6 +612,12 @@ type LoginJSONRequestBody = LoginRequest
 
 // ChangeOwnPasswordJSONRequestBody defines body for ChangeOwnPassword for application/json ContentType.
 type ChangeOwnPasswordJSONRequestBody = ChangePasswordRequest
+
+// CreateDocumentJSONRequestBody defines body for CreateDocument for application/json ContentType.
+type CreateDocumentJSONRequestBody = CreateDocumentRequest
+
+// UpdateDocumentJSONRequestBody defines body for UpdateDocument for application/json ContentType.
+type UpdateDocumentJSONRequestBody = UpdateDocumentRequest
 
 // CreateServerJSONRequestBody defines body for CreateServer for application/json ContentType.
 type CreateServerJSONRequestBody = CreateServerRequest
@@ -481,6 +648,30 @@ type ServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(w http.ResponseWriter, r *http.Request)
+	// ListDocuments Lista y busca documentos
+	// (GET /api/documents)
+	ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams)
+	// CreateDocument Crea un documento
+	// (POST /api/documents)
+	CreateDocument(w http.ResponseWriter, r *http.Request)
+	// ListDocumentTags Etiquetas en uso (para autocompletar)
+	// (GET /api/documents/tags)
+	ListDocumentTags(w http.ResponseWriter, r *http.Request)
+	// DeleteDocument Baja lógica de un documento
+	// (DELETE /api/documents/{id})
+	DeleteDocument(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// GetDocument Documento completo
+	// (GET /api/documents/{id})
+	GetDocument(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// UpdateDocument Edita un documento y genera una versión nueva
+	// (PATCH /api/documents/{id})
+	UpdateDocument(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// ListDocumentVersions Historial de versiones (solo metadatos)
+	// (GET /api/documents/{id}/versions)
+	ListDocumentVersions(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// GetDocumentVersion Contenido de una versión
+	// (GET /api/documents/{id}/versions/{version})
+	GetDocumentVersion(w http.ResponseWriter, r *http.Request, id ResourceId, version int)
 	// GetHealth Estado del backend y de sus dependencias
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -544,6 +735,54 @@ func (_ Unimplemented) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 // ChangeOwnPassword Cambia la contraseña del usuario autenticado
 // (POST /api/auth/me/password)
 func (_ Unimplemented) ChangeOwnPassword(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDocuments Lista y busca documentos
+// (GET /api/documents)
+func (_ Unimplemented) ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDocument Crea un documento
+// (POST /api/documents)
+func (_ Unimplemented) CreateDocument(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDocumentTags Etiquetas en uso (para autocompletar)
+// (GET /api/documents/tags)
+func (_ Unimplemented) ListDocumentTags(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteDocument Baja lógica de un documento
+// (DELETE /api/documents/{id})
+func (_ Unimplemented) DeleteDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDocument Documento completo
+// (GET /api/documents/{id})
+func (_ Unimplemented) GetDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateDocument Edita un documento y genera una versión nueva
+// (PATCH /api/documents/{id})
+func (_ Unimplemented) UpdateDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDocumentVersions Historial de versiones (solo metadatos)
+// (GET /api/documents/{id}/versions)
+func (_ Unimplemented) ListDocumentVersions(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDocumentVersion Contenido de una versión
+// (GET /api/documents/{id}/versions/{version})
+func (_ Unimplemented) GetDocumentVersion(w http.ResponseWriter, r *http.Request, id ResourceId, version int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -673,6 +912,284 @@ func (siw *ServerInterfaceWrapper) ChangeOwnPassword(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangeOwnPassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDocuments operation middleware
+func (siw *ServerInterfaceWrapper) ListDocuments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListDocumentsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", r.URL.Query(), &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pageSize"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pageSize", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tag" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag", r.URL.Query(), &params.Tag, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tag"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "order", r.URL.Query(), &params.Order, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "order"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDocuments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDocument operation middleware
+func (siw *ServerInterfaceWrapper) CreateDocument(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDocument(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDocumentTags operation middleware
+func (siw *ServerInterfaceWrapper) ListDocumentTags(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDocumentTags(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDocument operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDocument(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDocument operation middleware
+func (siw *ServerInterfaceWrapper) GetDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDocument(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateDocument operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateDocument(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDocumentVersions operation middleware
+func (siw *ServerInterfaceWrapper) ListDocumentVersions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDocumentVersions(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDocumentVersion operation middleware
+func (siw *ServerInterfaceWrapper) GetDocumentVersion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "version" -------------
+	var version int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "version", chi.URLParam(r, "version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDocumentVersion(w, r, id, version)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1294,6 +1811,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/api/services/{id}", wrapper.UpdateService)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/documents", wrapper.ListDocuments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/documents", wrapper.CreateDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/documents/tags", wrapper.ListDocumentTags)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/api/documents/{id}", wrapper.DeleteDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/documents/{id}", wrapper.GetDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/api/documents/{id}", wrapper.UpdateDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/documents/{id}/versions", wrapper.ListDocumentVersions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/documents/{id}/versions/{version}", wrapper.GetDocumentVersion)
+	})
 
 	return r
 }
@@ -1435,6 +1976,541 @@ func (response ChangeOwnPassword401JSONResponse) VisitChangeOwnPasswordResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentsRequestObject struct {
+	Params ListDocumentsParams
+}
+
+type ListDocumentsResponseObject interface {
+	VisitListDocumentsResponse(w http.ResponseWriter) error
+}
+
+type ListDocuments200JSONResponse PaginatedDocuments
+
+func (response ListDocuments200JSONResponse) VisitListDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocuments400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListDocuments400JSONResponse) VisitListDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocuments401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDocuments401JSONResponse) VisitListDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocuments403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListDocuments403JSONResponse) VisitListDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDocumentRequestObject struct {
+	Body *CreateDocumentJSONRequestBody
+}
+
+type CreateDocumentResponseObject interface {
+	VisitCreateDocumentResponse(w http.ResponseWriter) error
+}
+
+type CreateDocument201JSONResponse Document
+
+func (response CreateDocument201JSONResponse) VisitCreateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDocument400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDocument400JSONResponse) VisitCreateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDocument401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDocument401JSONResponse) VisitCreateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDocument403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDocument403JSONResponse) VisitCreateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDocument409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDocument409JSONResponse) VisitCreateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentTagsRequestObject struct {
+}
+
+type ListDocumentTagsResponseObject interface {
+	VisitListDocumentTagsResponse(w http.ResponseWriter) error
+}
+
+type ListDocumentTags200JSONResponse []string
+
+func (response ListDocumentTags200JSONResponse) VisitListDocumentTagsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentTags401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDocumentTags401JSONResponse) VisitListDocumentTagsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentTags403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListDocumentTags403JSONResponse) VisitListDocumentTagsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDocumentRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type DeleteDocumentResponseObject interface {
+	VisitDeleteDocumentResponse(w http.ResponseWriter) error
+}
+
+type DeleteDocument204Response struct {
+}
+
+func (response DeleteDocument204Response) VisitDeleteDocumentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDocument401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDocument401JSONResponse) VisitDeleteDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDocument403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteDocument403JSONResponse) VisitDeleteDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDocument404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDocument404JSONResponse) VisitDeleteDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type GetDocumentResponseObject interface {
+	VisitGetDocumentResponse(w http.ResponseWriter) error
+}
+
+type GetDocument200JSONResponse Document
+
+func (response GetDocument200JSONResponse) VisitGetDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocument401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDocument401JSONResponse) VisitGetDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocument403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetDocument403JSONResponse) VisitGetDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocument404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDocument404JSONResponse) VisitGetDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocumentRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *UpdateDocumentJSONRequestBody
+}
+
+type UpdateDocumentResponseObject interface {
+	VisitUpdateDocumentResponse(w http.ResponseWriter) error
+}
+
+type UpdateDocument200JSONResponse Document
+
+func (response UpdateDocument200JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocument400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateDocument400JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocument401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateDocument401JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocument403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateDocument403JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocument404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateDocument404JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateDocument409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateDocument409JSONResponse) VisitUpdateDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentVersionsRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type ListDocumentVersionsResponseObject interface {
+	VisitListDocumentVersionsResponse(w http.ResponseWriter) error
+}
+
+type ListDocumentVersions200JSONResponse []DocumentVersionSummary
+
+func (response ListDocumentVersions200JSONResponse) VisitListDocumentVersionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentVersions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDocumentVersions401JSONResponse) VisitListDocumentVersionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentVersions403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListDocumentVersions403JSONResponse) VisitListDocumentVersionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDocumentVersions404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListDocumentVersions404JSONResponse) VisitListDocumentVersionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentVersionRequestObject struct {
+	Id      ResourceId `json:"id"`
+	Version int        `json:"version"`
+}
+
+type GetDocumentVersionResponseObject interface {
+	VisitGetDocumentVersionResponse(w http.ResponseWriter) error
+}
+
+type GetDocumentVersion200JSONResponse DocumentVersion
+
+func (response GetDocumentVersion200JSONResponse) VisitGetDocumentVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentVersion401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDocumentVersion401JSONResponse) VisitGetDocumentVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentVersion403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetDocumentVersion403JSONResponse) VisitGetDocumentVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentVersion404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDocumentVersion404JSONResponse) VisitGetDocumentVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2377,6 +3453,30 @@ type StrictServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(ctx context.Context, request ChangeOwnPasswordRequestObject) (ChangeOwnPasswordResponseObject, error)
+	// ListDocuments Lista y busca documentos
+	// (GET /api/documents)
+	ListDocuments(ctx context.Context, request ListDocumentsRequestObject) (ListDocumentsResponseObject, error)
+	// CreateDocument Crea un documento
+	// (POST /api/documents)
+	CreateDocument(ctx context.Context, request CreateDocumentRequestObject) (CreateDocumentResponseObject, error)
+	// ListDocumentTags Etiquetas en uso (para autocompletar)
+	// (GET /api/documents/tags)
+	ListDocumentTags(ctx context.Context, request ListDocumentTagsRequestObject) (ListDocumentTagsResponseObject, error)
+	// DeleteDocument Baja lógica de un documento
+	// (DELETE /api/documents/{id})
+	DeleteDocument(ctx context.Context, request DeleteDocumentRequestObject) (DeleteDocumentResponseObject, error)
+	// GetDocument Documento completo
+	// (GET /api/documents/{id})
+	GetDocument(ctx context.Context, request GetDocumentRequestObject) (GetDocumentResponseObject, error)
+	// UpdateDocument Edita un documento y genera una versión nueva
+	// (PATCH /api/documents/{id})
+	UpdateDocument(ctx context.Context, request UpdateDocumentRequestObject) (UpdateDocumentResponseObject, error)
+	// ListDocumentVersions Historial de versiones (solo metadatos)
+	// (GET /api/documents/{id}/versions)
+	ListDocumentVersions(ctx context.Context, request ListDocumentVersionsRequestObject) (ListDocumentVersionsResponseObject, error)
+	// GetDocumentVersion Contenido de una versión
+	// (GET /api/documents/{id}/versions/{version})
+	GetDocumentVersion(ctx context.Context, request GetDocumentVersionRequestObject) (GetDocumentVersionResponseObject, error)
 	// GetHealth Estado del backend y de sus dependencias
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -2539,6 +3639,225 @@ func (sh *strictHandler) ChangeOwnPassword(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangeOwnPasswordResponseObject); ok {
 		if err := validResponse.VisitChangeOwnPasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDocuments operation middleware
+func (sh *strictHandler) ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams) {
+	var request ListDocumentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDocuments(ctx, request.(ListDocumentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDocuments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDocumentsResponseObject); ok {
+		if err := validResponse.VisitListDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDocument operation middleware
+func (sh *strictHandler) CreateDocument(w http.ResponseWriter, r *http.Request) {
+	var request CreateDocumentRequestObject
+
+	var body CreateDocumentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDocument(ctx, request.(CreateDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDocumentResponseObject); ok {
+		if err := validResponse.VisitCreateDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDocumentTags operation middleware
+func (sh *strictHandler) ListDocumentTags(w http.ResponseWriter, r *http.Request) {
+	var request ListDocumentTagsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDocumentTags(ctx, request.(ListDocumentTagsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDocumentTags")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDocumentTagsResponseObject); ok {
+		if err := validResponse.VisitListDocumentTagsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDocument operation middleware
+func (sh *strictHandler) DeleteDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request DeleteDocumentRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDocument(ctx, request.(DeleteDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDocumentResponseObject); ok {
+		if err := validResponse.VisitDeleteDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDocument operation middleware
+func (sh *strictHandler) GetDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request GetDocumentRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDocument(ctx, request.(GetDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDocumentResponseObject); ok {
+		if err := validResponse.VisitGetDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateDocument operation middleware
+func (sh *strictHandler) UpdateDocument(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request UpdateDocumentRequestObject
+
+	request.Id = id
+
+	var body UpdateDocumentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateDocument(ctx, request.(UpdateDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateDocumentResponseObject); ok {
+		if err := validResponse.VisitUpdateDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDocumentVersions operation middleware
+func (sh *strictHandler) ListDocumentVersions(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request ListDocumentVersionsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDocumentVersions(ctx, request.(ListDocumentVersionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDocumentVersions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDocumentVersionsResponseObject); ok {
+		if err := validResponse.VisitListDocumentVersionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDocumentVersion operation middleware
+func (sh *strictHandler) GetDocumentVersion(w http.ResponseWriter, r *http.Request, id ResourceId, version int) {
+	var request GetDocumentVersionRequestObject
+
+	request.Id = id
+	request.Version = version
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDocumentVersion(ctx, request.(GetDocumentVersionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDocumentVersion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDocumentVersionResponseObject); ok {
+		if err := validResponse.VisitGetDocumentVersionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

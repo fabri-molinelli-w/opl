@@ -19,16 +19,6 @@ const (
 	maxTagLength    = 40
 )
 
-// DocumentState is the editable part of a document, as read under lock by the
-// repository during an update.
-type DocumentState struct {
-	Title     string
-	ContentMD string
-	Category  string
-	Tags      []string
-	Version   int
-}
-
 // DocumentRepository is the subset of the document repository used by
 // DocumentService.
 type DocumentRepository interface {
@@ -36,7 +26,7 @@ type DocumentRepository interface {
 	GetDocumentByID(ctx context.Context, id string) (domain.Document, error)
 	// UpdateDocument locks the row, calls apply with the current state and
 	// persists the returned state plus a new version in one transaction.
-	UpdateDocument(ctx context.Context, id, editorID string, apply func(DocumentState) (DocumentState, error)) error
+	UpdateDocument(ctx context.Context, id, editorID string, apply func(domain.DocumentState) (domain.DocumentState, error)) error
 	ListDocuments(ctx context.Context, filter domain.DocumentFilter) ([]domain.DocumentSummary, error)
 	CountDocuments(ctx context.Context, filter domain.DocumentFilter) (int64, error)
 	DeleteDocument(ctx context.Context, id string) error
@@ -159,7 +149,7 @@ func (s *DocumentService) Update(ctx context.Context, id string, update domain.D
 	}
 
 	// Validate before opening the transaction.
-	var next DocumentState
+	var next domain.DocumentState
 	if update.Title != nil {
 		title, err := normalizeTitle(*update.Title)
 		if err != nil {
@@ -190,7 +180,7 @@ func (s *DocumentService) Update(ctx context.Context, id string, update domain.D
 		tags = normalized
 	}
 
-	err := s.repo.UpdateDocument(ctx, id, update.EditorID, func(current DocumentState) (DocumentState, error) {
+	err := s.repo.UpdateDocument(ctx, id, update.EditorID, func(current domain.DocumentState) (domain.DocumentState, error) {
 		return ApplyDocumentUpdate(current, next, tags, update)
 	})
 	if err != nil {
@@ -205,9 +195,9 @@ func (s *DocumentService) Update(ctx context.Context, id string, update domain.D
 
 // ApplyDocumentUpdate merges the validated fields over the current state and
 // enforces the optimistic lock (RN: versión desactualizada → 409).
-func ApplyDocumentUpdate(current, next DocumentState, tags []string, update domain.DocumentUpdate) (DocumentState, error) {
+func ApplyDocumentUpdate(current, next domain.DocumentState, tags []string, update domain.DocumentUpdate) (domain.DocumentState, error) {
 	if update.ExpectedVersion != nil && *update.ExpectedVersion != current.Version {
-		return DocumentState{}, domain.ErrVersionMismatch
+		return domain.DocumentState{}, domain.ErrVersionMismatch
 	}
 	result := current
 	if update.Title != nil {

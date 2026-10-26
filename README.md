@@ -94,4 +94,5 @@ Comprobar: `opencode mcp list`.
 
 | Etapa | Modelo | Notas |
 |---|---|---|
-| | | |
+| Fase 0, CU-01, CU-02 | Modelos gratuitos de OpenCode Zen | Ver cada entrada de `docs/prompts/` |
+| CU-05 en adelante | Claude Opus (`claude-opus-5-5`) vía Claude Code | Se agotaron los créditos de OpenCode (ADR-021) |

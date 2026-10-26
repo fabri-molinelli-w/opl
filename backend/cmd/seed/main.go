@@ -148,5 +148,5 @@ func run() error {
 		}
 		fmt.Printf("seeded %s\n", server.hostname)
 	}
-	return nil
+	return seedDocuments(ctx, pool)
 }

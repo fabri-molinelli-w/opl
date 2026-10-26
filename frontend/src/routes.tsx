@@ -5,6 +5,8 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { AccountPage } from '@/features/account/AccountPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { DocumentDetailPage } from '@/features/documents/DocumentDetailPage'
+import { DocumentEditorPage } from '@/features/documents/DocumentEditorPage'
 import { DocumentsPage } from '@/features/documents/DocumentsPage'
 import { InventoryPage } from '@/features/inventory/InventoryPage'
 import { ServerDetailPage } from '@/features/inventory/ServerDetailPage'
@@ -21,6 +23,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: 'documentacion', element: <DocumentsPage /> },
+          { path: 'documentacion/nuevo', element: <DocumentEditorPage /> },
+          { path: 'documentacion/:id', element: <DocumentDetailPage /> },
+          { path: 'documentacion/:id/editar', element: <DocumentEditorPage /> },
           { path: 'inventario', element: <InventoryPage /> },
           { path: 'inventario/:id', element: <ServerDetailPage /> },
           { path: 'mi-cuenta', element: <AccountPage /> },

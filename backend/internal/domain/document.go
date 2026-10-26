@@ -44,6 +44,16 @@ type Document struct {
 	UpdatedAt     time.Time
 }
 
+// DocumentState is the editable part of a document, as read under lock by the
+// repository during an update.
+type DocumentState struct {
+	Title     string
+	ContentMD string
+	Category  string
+	Tags      []string
+	Version   int
+}
+
 // DocumentSummary is a document without its content, used in listings.
 type DocumentSummary struct {
 	ID            string

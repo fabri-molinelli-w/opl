@@ -23,10 +23,10 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 |---|---|---|
 | ✅ | CU-01 | Login, roles (admin / sysadmin / soporte), gestión de usuarios |
 | ✅ | CU-02 | Inventario: primero servidores, después servicios |
-| ⬜ | CU-05 | Documentación: ABM + búsqueda + categorías y etiquetas |
-| ⬜ | CU-05 | Documentación: historial de versiones + vínculos con el inventario |
+| ✅ | CU-05 | Documentación: ABM + búsqueda + categorías y etiquetas |
+| ✅ | CU-05 | Documentación: historial de versiones + bloqueo optimista (vínculos con el inventario → Extras) |
 | ⬜ | CU-04 | Dashboard etapa 1 (inventario + documentación) |
-| ⬜ | — | Datos semilla ficticios para la demo |
+| 🟨 | — | Datos semilla ficticios para la demo (inventario + documentos listos) |
 
 ## Fase 2 — Operación
 
@@ -66,6 +66,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 ## Extras
 
 - Migrar OPLBot a LangGraph con paso de verificación.
+- Vínculos de documentos con servidores/servicios (`document_links`) y listado en la ficha.
+- Búsqueda con `pg_trgm` / `tsvector` (ADR-020).
 - Adjuntos en documentos (PDF, imágenes).
 - Login con Active Directory / LDAP.
 - Email por SMTP.
