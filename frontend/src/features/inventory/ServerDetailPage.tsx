@@ -13,6 +13,7 @@ import { isApiError } from '@/api/http'
 import { hasRole } from '@/auth/roles'
 import { useAuth } from '@/auth/useAuth'
 import { ServerForm } from './ServerForm'
+import { ServiceChecks } from './ServiceChecks'
 import { ServiceForm } from './ServiceForm'
 
 const STATUS_STYLES: Record<ServiceStatus, string> = {
@@ -35,8 +36,9 @@ export const ServerDetailPage = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const getServer = useGetServer(id ?? '', {
-    query: { enabled: id !== undefined },
+    query: { enabled: id !== undefined, refetchInterval: 10_000 },
   })
+  const [checksFor, setChecksFor] = useState<Service | null>(null)
   const deleteServer = useDeleteServer()
   const deleteService = useDeleteService()
   const [editingServer, setEditingServer] = useState(false)
@@ -194,6 +196,7 @@ export const ServerDetailPage = () => {
                   <th className="px-4 py-3 font-medium">Puerto</th>
                   <th className="px-4 py-3 font-medium">Check</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 font-medium">Monitoreo</th>
                   {canWrite && (
                     <th className="px-4 py-3 font-medium">Acciones</th>
                   )}
@@ -215,6 +218,15 @@ export const ServerDetailPage = () => {
                       >
                         {service.currentStatus}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setChecksFor(checksFor?.id === service.id ? null : service)}
+                        className="text-sm font-medium text-sky-700 hover:underline"
+                      >
+                        {checksFor?.id === service.id ? 'Ocultar' : 'Historial'}
+                      </button>
                     </td>
                     {canWrite && (
                       <td className="px-4 py-3">
@@ -248,6 +260,15 @@ export const ServerDetailPage = () => {
               </p>
             )}
           </div>
+          {checksFor !== null && (
+            <ServiceChecks
+              key={checksFor.id}
+              serviceId={checksFor.id}
+              serviceName={checksFor.name}
+              serverId={server.id}
+              canRun={canWrite}
+            />
+          )}
         </>
       )}
     </section>

@@ -31,6 +31,9 @@ type seedService struct {
 	intervalSeconds    int
 	latencyThresholdMs int
 	currentStatus      string
+	// monitored=false deja el monitoreo pausado (check_enabled): los servidores ficticios no
+	// existen, así que se muestra el estado sembrado. Solo el laboratorio se chequea de verdad.
+	monitored bool
 }
 
 func main() {
@@ -96,6 +99,16 @@ func run() error {
 			},
 		},
 		{
+			hostname: "lab-01.lab.local", ip: "192.0.2.100", environment: "dev",
+			os: "debian-12", location: "onprem", owner: "Laboratorio OPL",
+			tags: []string{"lab", "demo"},
+			services: []seedService{
+				{name: "lab-nginx", serviceType: "web", port: 8081, checkType: "http",
+					checkTarget: "http://localhost:8081/health", expectedStatus: 200,
+					intervalSeconds: 10, latencyThresholdMs: 500, currentStatus: "UNKNOWN", monitored: true},
+			},
+		},
+		{
 			hostname: "cache-01.example.com", ip: "203.0.113.40", environment: "dev",
 			os: "debian-12", location: "cloud", owner: "Plataforma",
 			tags: []string{"cache", "dev"},
@@ -133,17 +146,28 @@ func run() error {
 			if _, err := pool.Exec(ctx, `
 				INSERT INTO services (
 					server_id, name, type, port, check_type, check_target,
-					expected_status, interval_seconds, latency_threshold_ms, current_status
+					expected_status, interval_seconds, latency_threshold_ms, current_status, check_enabled
 				)
-				SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10
+				SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 				WHERE NOT EXISTS (
 					SELECT 1 FROM services
 					WHERE server_id = $1::uuid AND name = $2 AND deleted_at IS NULL
 				)`,
 				serverID, item.name, item.serviceType, item.port, item.checkType, item.checkTarget,
-				item.expectedStatus, item.intervalSeconds, item.latencyThresholdMs, item.currentStatus,
+				item.expectedStatus, item.intervalSeconds, item.latencyThresholdMs, item.currentStatus, item.monitored,
 			); err != nil {
 				return fmt.Errorf("insert service %s/%s: %w", server.hostname, item.name, err)
+			}
+			// Bases sembradas antes de CU-03: se pausa el monitoreo de los servicios ficticios.
+			if _, err := pool.Exec(ctx, `
+				UPDATE services
+				SET check_enabled = $3,
+				    current_status = CASE WHEN $3 THEN current_status ELSE $4 END,
+				    consecutive_failures = CASE WHEN $3 THEN consecutive_failures ELSE 0 END
+				WHERE server_id = $1::uuid AND name = $2 AND deleted_at IS NULL`,
+				serverID, item.name, item.monitored, item.currentStatus,
+			); err != nil {
+				return fmt.Errorf("update service monitoring %s/%s: %w", server.hostname, item.name, err)
 			}
 		}
 		fmt.Printf("seeded %s\n", server.hostname)

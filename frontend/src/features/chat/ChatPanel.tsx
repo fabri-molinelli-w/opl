@@ -12,6 +12,7 @@ type ChatMessage =
 
 const SUGGESTIONS = [
   '¿Qué servicios están caídos en producción?',
+  '¿Hay incidentes abiertos?',
   '¿Cómo reinicio Nginx?',
   '¿Cómo restauro un backup de PostgreSQL?',
 ]
@@ -27,6 +28,8 @@ const sourceLink = (source: ChatSource): string | null => {
       return `/documentacion/${source.id}`
     case 'server':
       return `/inventario/${source.id}`
+    case 'incident':
+      return `/incidentes/${source.id}`
     default:
       return null
   }
@@ -36,6 +39,7 @@ const SOURCE_LABEL: Record<ChatSource['type'], string> = {
   document: 'Documento',
   server: 'Servidor',
   service: 'Servicio',
+  incident: 'Incidente',
 }
 
 export const ChatPanel = ({ onClose }: { onClose: () => void }) => {

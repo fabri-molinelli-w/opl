@@ -51,7 +51,7 @@ INSERT INTO services (
     expected_status, interval_seconds, latency_threshold_ms
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at
+RETURNING id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at, last_checked_at, consecutive_failures, check_enabled
 `
 
 type CreateServiceParams struct {
@@ -94,12 +94,15 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.LastCheckedAt,
+		&i.ConsecutiveFailures,
+		&i.CheckEnabled,
 	)
 	return i, err
 }
 
 const getServiceByID = `-- name: GetServiceByID :one
-SELECT id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at
+SELECT id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at, last_checked_at, consecutive_failures, check_enabled
 FROM services
 WHERE id = $1 AND deleted_at IS NULL
 `
@@ -122,12 +125,15 @@ func (q *Queries) GetServiceByID(ctx context.Context, id pgtype.UUID) (Service, 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.LastCheckedAt,
+		&i.ConsecutiveFailures,
+		&i.CheckEnabled,
 	)
 	return i, err
 }
 
 const listServices = `-- name: ListServices :many
-SELECT s.id, s.server_id, s.name, s.type, s.port, s.check_type, s.check_target, s.expected_status, s.interval_seconds, s.latency_threshold_ms, s.current_status, s.created_at, s.updated_at, s.deleted_at
+SELECT s.id, s.server_id, s.name, s.type, s.port, s.check_type, s.check_target, s.expected_status, s.interval_seconds, s.latency_threshold_ms, s.current_status, s.created_at, s.updated_at, s.deleted_at, s.last_checked_at, s.consecutive_failures, s.check_enabled
 FROM services s
 JOIN servers srv ON srv.id = s.server_id AND srv.deleted_at IS NULL
 WHERE s.deleted_at IS NULL
@@ -183,6 +189,9 @@ func (q *Queries) ListServices(ctx context.Context, arg ListServicesParams) ([]S
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.LastCheckedAt,
+			&i.ConsecutiveFailures,
+			&i.CheckEnabled,
 		); err != nil {
 			return nil, err
 		}
@@ -195,7 +204,7 @@ func (q *Queries) ListServices(ctx context.Context, arg ListServicesParams) ([]S
 }
 
 const listServicesByServerID = `-- name: ListServicesByServerID :many
-SELECT id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at
+SELECT id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at, last_checked_at, consecutive_failures, check_enabled
 FROM services
 WHERE server_id = $1 AND deleted_at IS NULL
 ORDER BY name
@@ -225,6 +234,9 @@ func (q *Queries) ListServicesByServerID(ctx context.Context, serverID pgtype.UU
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.LastCheckedAt,
+			&i.ConsecutiveFailures,
+			&i.CheckEnabled,
 		); err != nil {
 			return nil, err
 		}
@@ -273,7 +285,7 @@ SET name                 = COALESCE($2, name),
     latency_threshold_ms = COALESCE($9, latency_threshold_ms),
     updated_at           = now()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at
+RETURNING id, server_id, name, type, port, check_type, check_target, expected_status, interval_seconds, latency_threshold_ms, current_status, created_at, updated_at, deleted_at, last_checked_at, consecutive_failures, check_enabled
 `
 
 type UpdateServiceParams struct {
@@ -316,6 +328,9 @@ func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (S
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.LastCheckedAt,
+		&i.ConsecutiveFailures,
+		&i.CheckEnabled,
 	)
 	return i, err
 }

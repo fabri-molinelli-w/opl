@@ -32,9 +32,9 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 
 | Estado | CU | Tarea |
 |---|---|---|
-| ⬜ | — | Laboratorio en docker-compose (nginx, api-demo, https con certificado por vencer) |
-| ⬜ | CU-03 | Health checks + apertura automática de incidentes |
-| ⬜ | CU-10 | Gestión de incidentes |
+| ✅ | — | Laboratorio en docker-compose (`lab-nginx`; api-demo y https quedan para CU-06/07) |
+| ✅ | CU-03 | Health checks + apertura automática de incidentes |
+| ✅ | CU-10 | Gestión de incidentes (sin deploys relacionados ni post-mortem) |
 | ⬜ | CU-04 | Dashboard etapa 2 (estado de servicios, incidentes, gráficos 24 h) |
 | ⬜ | CU-08 | Notificaciones internas (campana) |
 

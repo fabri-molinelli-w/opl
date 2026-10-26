@@ -19,15 +19,18 @@ El backend ejecuta periódicamente chequeos HTTP/HTTPS o TCP sobre cada servicio
 - RN-7 Si cambia el estado, se emite un evento interno `service.status_changed` (lo consumen CU-10 y CU-08).
 - RN-7b Tras `HEALTHCHECK_FAILS_TO_INCIDENT` chequeos DOWN consecutivos se abre un incidente automático (la regla completa está en CU-10, RN-4).
 - RN-8 Chequeo manual a demanda desde la UI (sysadmin).
-- RN-9 Retención del historial: 7 días (limpieza diaria).
+- RN-9 Retención del historial: 7 días (limpieza cada hora).
+- RN-10 Un servicio con `check_enabled = false` (monitoreo pausado) no se chequea. Lo usan los datos de demo: los
+  servidores ficticios conservan el estado sembrado y solo el laboratorio (`lab-nginx`) se chequea de verdad.
+- RN-11 El chequeo HTTP no sigue redirecciones: el código esperado se compara con la respuesta del destino.
 
 ## Modelo de datos
-`health_checks(id, service_id fk, status, response_ms int null, http_status int null, error text null, checked_at timestamptz)` + índice `(service_id, checked_at desc)`.
+Migración `00006`: `health_checks(id, service_id fk, status, response_ms int null, http_status int null, error text null, checked_at timestamptz)` + índice `(service_id, checked_at desc)`; en `services`: `last_checked_at`, `consecutive_failures`, `check_enabled`.
 
 ## Endpoints
 | Método | Ruta | Rol mínimo | Notas |
 |---|---|---|---|
-| GET | /api/services/{id}/checks | soporte | `from`, `to`, `limit` |
+| GET | /api/services/{id}/checks | soporte | `limit` (1-500, default 50) |
 | POST | /api/services/{id}/checks/run | sysadmin | ejecuta ya y devuelve el resultado |
 
 ## UI

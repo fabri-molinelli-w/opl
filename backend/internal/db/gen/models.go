@@ -36,6 +36,42 @@ type DocumentVersion struct {
 	CreatedAt  pgtype.Timestamptz
 }
 
+type HealthCheck struct {
+	ID         pgtype.UUID
+	ServiceID  pgtype.UUID
+	Status     string
+	ResponseMs pgtype.Int4
+	HttpStatus pgtype.Int4
+	Error      pgtype.Text
+	CheckedAt  pgtype.Timestamptz
+}
+
+type Incident struct {
+	ID          pgtype.UUID
+	Title       string
+	Description string
+	ServiceID   pgtype.UUID
+	Severity    string
+	Status      string
+	AssigneeID  pgtype.UUID
+	RootCause   pgtype.Text
+	AutoCreated bool
+	OpenedAt    pgtype.Timestamptz
+	ResolvedAt  pgtype.Timestamptz
+	ClosedAt    pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type IncidentEvent struct {
+	ID         pgtype.UUID
+	IncidentID pgtype.UUID
+	AuthorID   pgtype.UUID
+	Kind       string
+	Body       string
+	CreatedAt  pgtype.Timestamptz
+}
+
 type Server struct {
 	ID          pgtype.UUID
 	Hostname    string
@@ -51,20 +87,23 @@ type Server struct {
 }
 
 type Service struct {
-	ID                 pgtype.UUID
-	ServerID           pgtype.UUID
-	Name               string
-	Type               string
-	Port               int32
-	CheckType          string
-	CheckTarget        string
-	ExpectedStatus     int32
-	IntervalSeconds    int32
-	LatencyThresholdMs int32
-	CurrentStatus      string
-	CreatedAt          pgtype.Timestamptz
-	UpdatedAt          pgtype.Timestamptz
-	DeletedAt          pgtype.Timestamptz
+	ID                  pgtype.UUID
+	ServerID            pgtype.UUID
+	Name                string
+	Type                string
+	Port                int32
+	CheckType           string
+	CheckTarget         string
+	ExpectedStatus      int32
+	IntervalSeconds     int32
+	LatencyThresholdMs  int32
+	CurrentStatus       string
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+	DeletedAt           pgtype.Timestamptz
+	LastCheckedAt       pgtype.Timestamptz
+	ConsecutiveFailures int32
+	CheckEnabled        bool
 }
 
 type User struct {

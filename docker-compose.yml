@@ -19,5 +19,15 @@ services:
       retries: 5
       start_period: 10s
 
+  # Laboratorio para la demo (CU-03/CU-10): detenerlo con `docker compose stop lab-nginx`
+  # hace que su servicio pase a DOWN y, tras N chequeos, se abra un incidente automático.
+  lab-nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - ./lab/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
 volumes:
   pgdata:
