@@ -50,33 +50,36 @@ type ServiceCatalog interface {
 // Deps groups every dependency of the HTTP handlers. Adding a new use case only
 // adds a field here instead of changing NewServer's signature.
 type Deps struct {
-	DB       Pinger
-	Auth     AuthService
-	Users    UserService
-	Servers  ServerService
-	Services ServiceCatalog
-	Log      *slog.Logger
+	DB        Pinger
+	Auth      AuthService
+	Users     UserService
+	Servers   ServerService
+	Services  ServiceCatalog
+	Documents DocumentService
+	Log       *slog.Logger
 }
 
 // Server implements api.StrictServerInterface. It only validates input,
 // converts generated types to domain types and delegates to the services.
 type Server struct {
-	db       Pinger
-	auth     AuthService
-	users    UserService
-	servers  ServerService
-	services ServiceCatalog
-	log      *slog.Logger
+	db        Pinger
+	auth      AuthService
+	users     UserService
+	servers   ServerService
+	services  ServiceCatalog
+	documents DocumentService
+	log       *slog.Logger
 }
 
 func NewServer(deps Deps) *Server {
 	return &Server{
-		db:       deps.DB,
-		auth:     deps.Auth,
-		users:    deps.Users,
-		servers:  deps.Servers,
-		services: deps.Services,
-		log:      deps.Log,
+		db:        deps.DB,
+		auth:      deps.Auth,
+		users:     deps.Users,
+		servers:   deps.Servers,
+		services:  deps.Services,
+		documents: deps.Documents,
+		log:       deps.Log,
 	}
 }
 

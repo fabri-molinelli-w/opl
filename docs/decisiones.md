@@ -98,3 +98,14 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Fecha:** 2026-10-25
 - **Decisión:** los datos de demo viven en `backend/cmd/seed` y se ejecutan manualmente con `make seed`. El comando hace UPSERT de servidores por hostname y crea cada servicio solo si no existe. No se ejecuta en migraciones ni al arrancar el backend.
 - **Motivo:** migraciones deterministas y ausencia de datos ficticios en producción, con una semilla reproducible para la demo que puede correrse varias veces sin duplicados.
+
+## ADR-020 · Búsqueda de documentos con ILIKE en el MVP
+- **Fecha:** 2026-10-26
+- **Decisión:** la búsqueda de CU-05 usa `ILIKE` sobre título, contenido y etiquetas, escapando `%`, `_` y `\`. El orden se elige con `CASE` sobre valores de una lista cerrada (nunca SQL armado con texto del usuario).
+- **Motivo:** alcanza para cientos de documentos y no agrega extensiones. Si la búsqueda se vuelve lenta, se migra a `pg_trgm` o a full-text search (`tsvector` en español).
+
+## ADR-021 · Cambio de agente para el cierre del TP
+- **Fecha:** 2026-10-26
+- **Decisión:** a partir de CU-05 el desarrollo se hace con Claude Code (Claude Opus) en lugar de OpenCode, porque se agotaron los créditos de OpenCode Zen a dos días de la entrega.
+- **Motivo:** mantener el ritmo. La metodología no cambia: AGENTS.md, spec → contrato → `make generate` → service → handler → UI, loops con `make verify`, plan por CU en `docs/plans/` y revisión humana en el punto de control.
+

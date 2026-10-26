@@ -5,6 +5,14 @@ linters:
   enable:
     - gocritic
     - misspell
+  settings:
+    misspell:
+      # Textos de UI y datos semilla en español (AGENTS.md §10).
+      ignore-rules:
+        - responsable
+        - problemas
+        - configuracion
+        - autor
   exclusions:
     paths:
       - internal/api/gen/

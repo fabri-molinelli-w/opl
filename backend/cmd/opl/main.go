@@ -72,18 +72,21 @@ func run(log *slog.Logger) error {
 	userService := service.NewUserService(userRepo, log)
 	serverService := service.NewServerService(serverRepo, serviceRepo, log)
 	serviceCatalog := service.NewServiceCatalog(serviceRepo, serverRepo, log)
+	documentRepo := repository.NewDocumentRepository(queries, pool)
+	documentService := service.NewDocumentService(documentRepo, log)
 
 	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return fmt.Errorf("failed to bootstrap admin user: %w", err)
 	}
 
 	strict := handlers.NewServer(handlers.Deps{
-		DB:       pool,
-		Auth:     authService,
-		Users:    userService,
-		Servers:  serverService,
-		Services: serviceCatalog,
-		Log:      log,
+		DB:        pool,
+		Auth:      authService,
+		Users:     userService,
+		Servers:   serverService,
+		Services:  serviceCatalog,
+		Documents: documentService,
+		Log:       log,
 	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)
 	strictHandler := api.NewStrictHandlerWithOptions(

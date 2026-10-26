@@ -10,6 +10,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Document struct {
+	ID        pgtype.UUID
+	Title     string
+	ContentMd string
+	Category  string
+	Tags      []string
+	Version   int32
+	CreatedBy pgtype.UUID
+	UpdatedBy pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	DeletedAt pgtype.Timestamptz
+}
+
+type DocumentVersion struct {
+	ID         pgtype.UUID
+	DocumentID pgtype.UUID
+	Version    int32
+	Title      string
+	ContentMd  string
+	Category   string
+	Tags       []string
+	EditedBy   pgtype.UUID
+	CreatedAt  pgtype.Timestamptz
+}
+
 type Server struct {
 	ID          pgtype.UUID
 	Hostname    string
