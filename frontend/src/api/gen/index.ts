@@ -4,6 +4,7 @@ export * from './dashboard/dashboard.ts';
 export * from './documents/documents.ts';
 export * from './incidents/incidents.ts';
 export * from './monitoring/monitoring.ts';
+export * from './notifications/notifications.ts';
 export * from './servers/servers.ts';
 export * from './services/services.ts';
 export * from './system/system.ts';

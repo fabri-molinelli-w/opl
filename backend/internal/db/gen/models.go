@@ -72,6 +72,18 @@ type IncidentEvent struct {
 	CreatedAt  pgtype.Timestamptz
 }
 
+type Notification struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	EventType string
+	Title     string
+	Body      string
+	Link      string
+	DedupeKey string
+	ReadAt    pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
 type Server struct {
 	ID          pgtype.UUID
 	Hostname    string

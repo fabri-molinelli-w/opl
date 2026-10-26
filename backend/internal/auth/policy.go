@@ -51,6 +51,11 @@ const (
 	OperationAddIncidentNote    = "AddIncidentNote"
 
 	OperationGetDashboardSummary = "GetDashboardSummary"
+
+	OperationListMyNotifications        = "ListMyNotifications"
+	OperationCountMyUnreadNotifications = "CountMyUnreadNotifications"
+	OperationMarkMyNotificationRead     = "MarkMyNotificationRead"
+	OperationMarkAllMyNotificationsRead = "MarkAllMyNotificationsRead"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -106,6 +111,11 @@ func NewPolicy() Policy {
 			OperationAddIncidentNote:    domain.RoleSoporte,
 
 			OperationGetDashboardSummary: domain.RoleSoporte,
+
+			OperationListMyNotifications:        domain.RoleSoporte,
+			OperationCountMyUnreadNotifications: domain.RoleSoporte,
+			OperationMarkMyNotificationRead:     domain.RoleSoporte,
+			OperationMarkAllMyNotificationsRead: domain.RoleSoporte,
 		},
 	}
 }

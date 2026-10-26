@@ -38,6 +38,7 @@ type Document struct {
 	Category      string
 	Tags          []string
 	Version       int
+	CreatedByID   string
 	CreatedByName string
 	UpdatedByName string
 	CreatedAt     time.Time

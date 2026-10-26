@@ -74,6 +74,7 @@ func (r *DocumentRepository) GetDocumentByID(ctx context.Context, id string) (do
 		Category:      row.Category,
 		Tags:          row.Tags,
 		Version:       int(row.Version),
+		CreatedByID:   uuidToString(row.CreatedBy),
 		CreatedByName: row.CreatedByName,
 		UpdatedByName: row.UpdatedByName,
 		CreatedAt:     row.CreatedAt.Time,

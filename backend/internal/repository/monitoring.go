@@ -93,6 +93,7 @@ func (r *MonitoringRepository) RecordCheck(
 
 	outcome := domain.CheckOutcome{
 		Check:          toDomainHealthCheck(row),
+		ServerID:       uuidToString(state.ServerID),
 		ServiceName:    state.Name,
 		PreviousStatus: state.CurrentStatus,
 	}

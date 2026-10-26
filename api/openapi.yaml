@@ -19,6 +19,7 @@ tags:
   - name: monitoring
   - name: incidents
   - name: dashboard
+  - name: notifications
 
 paths:
   /api/health:
@@ -926,6 +927,73 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /api/me/notifications:
+    get:
+      tags: [notifications]
+      operationId: listMyNotifications
+      summary: Últimas 20 notificaciones del usuario autenticado
+      x-min-role: soporte
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notificaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/me/notifications/unread-count:
+    get:
+      tags: [notifications]
+      operationId: countMyUnreadNotifications
+      summary: Cantidad de notificaciones sin leer (campana)
+      x-min-role: soporte
+      responses:
+        "200":
+          description: Contador
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/me/notifications/{id}/read:
+    post:
+      tags: [notifications]
+      operationId: markMyNotificationRead
+      summary: Marca una notificación como leída
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Marcada como leída
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/me/notifications/read-all:
+    post:
+      tags: [notifications]
+      operationId: markAllMyNotificationsRead
+      summary: Marca todas las notificaciones como leídas
+      x-min-role: soporte
+      responses:
+        "204":
+          description: Todas marcadas como leídas
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
@@ -1841,6 +1909,30 @@ components:
         start: { type: string, format: date-time }
         uptimePercent: { type: number, format: double }
         avgResponseMs: { type: number, format: double }
+
+    NotificationEventType:
+      type: string
+      enum: [service.down, incident.opened, incident.assigned, document.updated]
+
+    Notification:
+      type: object
+      required: [id, eventType, title, body, link, read, createdAt]
+      properties:
+        id: { type: string }
+        eventType: { $ref: "#/components/schemas/NotificationEventType" }
+        title: { type: string }
+        body: { type: string }
+        link:
+          type: string
+          description: Ruta del frontend del recurso relacionado
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count: { type: integer }
 
   responses:
     BadRequest:

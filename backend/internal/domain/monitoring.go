@@ -43,6 +43,7 @@ type HealthCheck struct {
 // internal events (notifications, CU-08).
 type CheckOutcome struct {
 	Check            HealthCheck
+	ServerID         string
 	ServiceName      string
 	PreviousStatus   string
 	IncidentOpenedID string

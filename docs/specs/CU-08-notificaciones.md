@@ -16,19 +16,20 @@ y un panel con el listado. No se usan canales externos.
 | `service.down` | servicio pasa a DOWN | sysadmin, admin |
 | `incident.opened` | incidente SEV1 o SEV2 abierto | todos |
 | `incident.assigned` | me asignan un incidente | el asignado |
-| `certificate.critical` | certificado pasa a critical | sysadmin, admin |
+| `certificate.critical` | certificado pasa a critical | sysadmin, admin *(pendiente, CU-06)* |
 | `document.updated` | se edita un documento que yo creé | el autor original |
 
 ## Reglas de negocio
 - RN-1 Cada notificación pertenece a un usuario y tiene estado leída / no leída.
 - RN-2 Anti-duplicados: misma `dedupe_key` (evento + entidad) no se repite al mismo usuario mientras haya una no leída.
-- RN-3 Cada usuario puede desactivar tipos de evento que no le interesan.
+- RN-3 *(Pendiente)* Cada usuario puede desactivar tipos de evento que no le interesan.
 - RN-4 Las notificaciones se generan de forma asíncrona; un error no bloquea la operación que la disparó.
 - RN-5 Retención: 30 días.
 
 ## Modelo de datos
 - `notifications(id, user_id fk, event_type, title, body, link text, dedupe_key, read_at null, created_at)`
-- `notification_prefs(user_id fk, event_type, enabled bool, primary key(user_id, event_type))`
+- *(Pendiente)* `notification_prefs(user_id fk, event_type, enabled bool, primary key(user_id, event_type))`
+- Migración `00007`; RN-2 se garantiza con un índice único parcial `(user_id, dedupe_key) WHERE read_at IS NULL`.
 
 ## Endpoints
 | Método | Ruta | Rol mínimo |
@@ -37,7 +38,7 @@ y un panel con el listado. No se usan canales externos.
 | GET | /api/me/notifications/unread-count | soporte |
 | POST | /api/me/notifications/{id}/read | soporte |
 | POST | /api/me/notifications/read-all | soporte |
-| GET / PUT | /api/me/notification-prefs | soporte |
+| GET / PUT | /api/me/notification-prefs | soporte *(pendiente)* |
 
 ## UI
 - Campana con contador; se actualiza cada 30 s.
