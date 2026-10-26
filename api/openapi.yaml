@@ -14,6 +14,7 @@ tags:
   - name: users
   - name: servers
   - name: services
+  - name: documents
 
 paths:
   /api/health:
@@ -435,6 +436,216 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/documents:
+    get:
+      tags: [documents]
+      operationId: listDocuments
+      summary: Lista y busca documentos
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: q
+          in: query
+          description: Texto a buscar en título, contenido y etiquetas
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/DocumentCategory"
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            $ref: "#/components/schemas/DocumentSort"
+        - name: order
+          in: query
+          schema:
+            $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Documentos paginados (sin contenido)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedDocuments"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [documents]
+      operationId: createDocument
+      summary: Crea un documento
+      x-min-role: soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentRequest"
+      responses:
+        "201":
+          description: Documento creado (versión 1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/documents/tags:
+    get:
+      tags: [documents]
+      operationId: listDocumentTags
+      summary: Etiquetas en uso (para autocompletar)
+      x-min-role: soporte
+      responses:
+        "200":
+          description: Etiquetas ordenadas alfabéticamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/documents/{id}:
+    get:
+      tags: [documents]
+      operationId: getDocument
+      summary: Documento completo
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Documento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [documents]
+      operationId: updateDocument
+      summary: Edita un documento y genera una versión nueva
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentRequest"
+      responses:
+        "200":
+          description: Documento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags: [documents]
+      operationId: deleteDocument
+      summary: Baja lógica de un documento
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Documento dado de baja
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/documents/{id}/versions:
+    get:
+      tags: [documents]
+      operationId: listDocumentVersions
+      summary: Historial de versiones (solo metadatos)
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Versiones, de la más nueva a la más vieja
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentVersionSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/documents/{id}/versions/{version}:
+    get:
+      tags: [documents]
+      operationId: getDocumentVersion
+      summary: Contenido de una versión
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Versión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentVersion"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
@@ -832,6 +1043,168 @@ components:
           type: integer
         pageSize:
           type: integer
+
+    DocumentCategory:
+      type: string
+      enum: [procedimiento, runbook, guia, configuracion, referencia]
+
+    DocumentSort:
+      type: string
+      enum: [title, updatedAt]
+
+    SortOrder:
+      type: string
+      enum: [asc, desc]
+
+    DocumentSummary:
+      type: object
+      required: [id, title, category, tags, version, updatedByName, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          $ref: "#/components/schemas/DocumentCategory"
+        tags:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+        updatedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Document:
+      type: object
+      required: [id, title, contentMd, category, tags, version, createdByName, updatedByName, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        contentMd:
+          type: string
+          description: Contenido en Markdown (se renderiza sin HTML crudo)
+        category:
+          $ref: "#/components/schemas/DocumentCategory"
+        tags:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          description: Versión actual; se envía en el PATCH para el bloqueo optimista
+        createdByName:
+          type: string
+        updatedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateDocumentRequest:
+      type: object
+      required: [title, contentMd, category]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 150
+        contentMd:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/DocumentCategory"
+        tags:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+
+    UpdateDocumentRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 150
+        contentMd:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/DocumentCategory"
+        tags:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        version:
+          type: integer
+          minimum: 1
+          description: Versión que se editó. Si no coincide con la actual → 409.
+
+    PaginatedDocuments:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentSummary"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    DocumentVersionSummary:
+      type: object
+      required: [version, title, editedByName, createdAt]
+      properties:
+        version:
+          type: integer
+        title:
+          type: string
+        editedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentVersion:
+      type: object
+      required: [version, title, contentMd, category, tags, editedByName, createdAt]
+      properties:
+        version:
+          type: integer
+        title:
+          type: string
+        contentMd:
+          type: string
+        category:
+          $ref: "#/components/schemas/DocumentCategory"
+        tags:
+          type: array
+          items:
+            type: string
+        editedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
 
   responses:
     BadRequest:
