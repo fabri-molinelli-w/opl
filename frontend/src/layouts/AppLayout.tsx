@@ -15,6 +15,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: 'Dashboard', end: true, minRole: 'soporte' },
   { to: '/documentacion', label: 'Documentación', end: false, minRole: 'soporte' },
+  { to: '/incidentes', label: 'Incidentes', end: false, minRole: 'soporte' },
   { to: '/inventario', label: 'Inventario', end: false, minRole: 'soporte' },
   { to: '/usuarios', label: 'Usuarios', end: false, minRole: 'admin' },
   { to: '/mi-cuenta', label: 'Mi cuenta', end: false, minRole: 'soporte' },

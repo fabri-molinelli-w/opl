@@ -125,3 +125,13 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Motivo:** el ai-service queda de solo lectura, no hay estado `index_status` que mantener y un documento
   editado se refleja en la siguiente consulta. Con cientos de documentos el costo es una consulta paginada.
 
+## ADR-024 · Scheduler de health checks dentro del backend
+- **Fecha:** 2026-10-26
+- **Decisión:** el scheduler corre en el mismo binario Go: un ticker de 5 s busca los servicios vencidos en la base
+  (`last_checked_at + interval_seconds`), los reparte en un pool de `HEALTHCHECK_WORKERS` y nunca chequea dos veces el
+  mismo servicio en paralelo. Cada resultado, el cambio de estado y la apertura del incidente automático se guardan en
+  una sola transacción; un índice único parcial evita incidentes duplicados.
+- **Motivo:** sin infraestructura extra (colas, cron externo) y consistente ante reinicios: el estado vive en
+  PostgreSQL, no en memoria. Los destinos de chequeo solo los configura `sysadmin`, lo que acota el riesgo de que el
+  backend se use para sondear la red interna (SSRF).
+

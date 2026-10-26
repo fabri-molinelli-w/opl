@@ -8,6 +8,8 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { DocumentDetailPage } from '@/features/documents/DocumentDetailPage'
 import { DocumentEditorPage } from '@/features/documents/DocumentEditorPage'
 import { DocumentsPage } from '@/features/documents/DocumentsPage'
+import { IncidentDetailPage } from '@/features/incidents/IncidentDetailPage'
+import { IncidentsPage } from '@/features/incidents/IncidentsPage'
 import { InventoryPage } from '@/features/inventory/InventoryPage'
 import { ServerDetailPage } from '@/features/inventory/ServerDetailPage'
 import { UsersPage } from '@/features/users/UsersPage'
@@ -26,6 +28,8 @@ export const router = createBrowserRouter([
           { path: 'documentacion/nuevo', element: <DocumentEditorPage /> },
           { path: 'documentacion/:id', element: <DocumentDetailPage /> },
           { path: 'documentacion/:id/editar', element: <DocumentEditorPage /> },
+          { path: 'incidentes', element: <IncidentsPage /> },
+          { path: 'incidentes/:id', element: <IncidentDetailPage /> },
           { path: 'inventario', element: <InventoryPage /> },
           { path: 'inventario/:id', element: <ServerDetailPage /> },
           { path: 'mi-cuenta', element: <AccountPage /> },

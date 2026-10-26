@@ -16,6 +16,8 @@ tags:
   - name: services
   - name: documents
   - name: chat
+  - name: monitoring
+  - name: incidents
 
 paths:
   /api/health:
@@ -675,6 +677,237 @@ paths:
         "503":
           $ref: "#/components/responses/Unavailable"
 
+  /api/services/{id}/checks:
+    get:
+      tags: [monitoring]
+      operationId: listServiceChecks
+      summary: Historial de chequeos de un servicio (más nuevos primero)
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: Chequeos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthCheck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/services/{id}/checks/run:
+    post:
+      tags: [monitoring]
+      operationId: runServiceCheck
+      summary: Ejecuta un chequeo ahora y devuelve el resultado
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Resultado del chequeo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheck"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/incidents:
+    get:
+      tags: [incidents]
+      operationId: listIncidents
+      summary: Lista incidentes con filtros
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/IncidentStatus"
+        - name: severity
+          in: query
+          schema:
+            $ref: "#/components/schemas/Severity"
+        - name: serviceId
+          in: query
+          schema:
+            type: string
+        - name: active
+          in: query
+          description: Solo abiertos o en curso
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Incidentes paginados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedIncidents"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [incidents]
+      operationId: createIncident
+      summary: Abre un incidente manualmente
+      x-min-role: soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentRequest"
+      responses:
+        "201":
+          description: Incidente abierto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/incidents/{id}:
+    get:
+      tags: [incidents]
+      operationId: getIncident
+      summary: Detalle con línea de tiempo
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Incidente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [incidents]
+      operationId: updateIncident
+      summary: Actualiza título, descripción, severidad o responsable
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateIncidentRequest"
+      responses:
+        "200":
+          description: Incidente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/incidents/{id}/transition:
+    post:
+      tags: [incidents]
+      operationId: transitionIncident
+      summary: Cambia el estado según la máquina de estados (409 si no es válida)
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentTransitionRequest"
+      responses:
+        "200":
+          description: Incidente con el nuevo estado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/incidents/{id}/events:
+    post:
+      tags: [incidents]
+      operationId: addIncidentNote
+      summary: Agrega una nota a la línea de tiempo
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentNoteRequest"
+      responses:
+        "201":
+          description: Incidente con la nota agregada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
@@ -1250,7 +1483,7 @@ components:
 
     ChatSourceType:
       type: string
-      enum: [document, service, server]
+      enum: [document, service, server, incident]
 
     ChatSource:
       type: object
@@ -1274,6 +1507,201 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ChatSource"
+
+    HealthCheckStatus:
+      type: string
+      enum: [UP, DOWN, DEGRADED]
+
+    HealthCheck:
+      type: object
+      required: [id, serviceId, status, checkedAt]
+      properties:
+        id:
+          type: string
+        serviceId:
+          type: string
+        status:
+          $ref: "#/components/schemas/HealthCheckStatus"
+        responseMs:
+          type: integer
+        httpStatus:
+          type: integer
+        error:
+          type: string
+        checkedAt:
+          type: string
+          format: date-time
+
+    IncidentStatus:
+      type: string
+      enum: [open, in_progress, resolved, closed]
+
+    IncidentEventKind:
+      type: string
+      enum: [status_change, note, system]
+
+    IncidentEvent:
+      type: object
+      required: [id, kind, body, authorName, createdAt]
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: "#/components/schemas/IncidentEventKind"
+        body:
+          type: string
+        authorName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    IncidentSummary:
+      type: object
+      required: [id, title, severity, status, autoCreated, serviceName, assigneeName, openedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        assigneeName:
+          type: string
+        autoCreated:
+          type: boolean
+        openedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+
+    Incident:
+      type: object
+      required: [id, title, description, severity, status, autoCreated, serviceName, assigneeName, rootCause,
+                 openedAt, createdAt, updatedAt, events, allowedTransitions]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        assigneeId:
+          type: string
+        assigneeName:
+          type: string
+        rootCause:
+          type: string
+        autoCreated:
+          type: boolean
+        openedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+        resolutionMinutes:
+          type: integer
+          description: resolvedAt - openedAt en minutos (RN-6)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentEvent"
+        allowedTransitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentStatus"
+
+    CreateIncidentRequest:
+      type: object
+      required: [title, severity]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+        serviceId:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        assigneeId:
+          type: string
+
+    UpdateIncidentRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        assigneeId:
+          type: string
+
+    IncidentTransitionRequest:
+      type: object
+      required: [to]
+      properties:
+        to:
+          $ref: "#/components/schemas/IncidentStatus"
+        rootCause:
+          type: string
+
+    IncidentNoteRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+
+    PaginatedIncidents:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentSummary"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
 
   responses:
     BadRequest:

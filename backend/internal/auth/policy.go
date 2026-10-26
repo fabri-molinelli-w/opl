@@ -40,6 +40,15 @@ const (
 	OperationGetDocumentVersion   = "GetDocumentVersion"
 
 	OperationChatWithOpsbot = "ChatWithOpsbot"
+
+	OperationListServiceChecks  = "ListServiceChecks"
+	OperationRunServiceCheck    = "RunServiceCheck"
+	OperationListIncidents      = "ListIncidents"
+	OperationCreateIncident     = "CreateIncident"
+	OperationGetIncident        = "GetIncident"
+	OperationUpdateIncident     = "UpdateIncident"
+	OperationTransitionIncident = "TransitionIncident"
+	OperationAddIncidentNote    = "AddIncidentNote"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -84,6 +93,15 @@ func NewPolicy() Policy {
 			OperationGetDocumentVersion:   domain.RoleSoporte,
 
 			OperationChatWithOpsbot: domain.RoleSoporte,
+
+			OperationListServiceChecks:  domain.RoleSoporte,
+			OperationRunServiceCheck:    domain.RoleSysadmin,
+			OperationListIncidents:      domain.RoleSoporte,
+			OperationCreateIncident:     domain.RoleSoporte,
+			OperationGetIncident:        domain.RoleSoporte,
+			OperationUpdateIncident:     domain.RoleSoporte,
+			OperationTransitionIncident: domain.RoleSoporte,
+			OperationAddIncidentNote:    domain.RoleSoporte,
 		},
 	}
 }

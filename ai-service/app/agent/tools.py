@@ -96,8 +96,30 @@ def build_tools(client: BackendClient, store: DocumentStore, sources: SourceColl
             )
         return f"{len(items)} servidor(es):\n" + "\n".join(lines)
 
+    async def incidentes_activos() -> str:
+        """Lista los incidentes abiertos o en curso, con severidad, servicio afectado y responsable."""
+        try:
+            data = await client.list_incidents({"active": "true", "pageSize": 50})
+        except BackendError as exc:
+            return f"No se pudo consultar los incidentes ({exc})."
+        items = data["items"]
+        if not items:
+            return "No hay incidentes abiertos ni en curso."
+        lines: list[str] = []
+        for inc in items:
+            sources.add("incident", str(inc["id"]), str(inc["title"]))
+            origin = "automático" if inc["autoCreated"] else "manual"
+            service = inc["serviceName"] or "ninguno"
+            assignee = inc["assigneeName"] or "sin asignar"
+            lines.append(
+                f"- [{inc['severity']}] {inc['title']} — estado {inc['status']}, servicio {service}, "
+                f"responsable {assignee}, abierto {inc['openedAt']} ({origin})"
+            )
+        return f"{len(items)} incidente(s) activo(s):\n" + "\n".join(lines)
+
     return [
         StructuredTool.from_function(coroutine=buscar_documentacion, name="buscar_documentacion"),
+        StructuredTool.from_function(coroutine=incidentes_activos, name="incidentes_activos"),
         StructuredTool.from_function(coroutine=estado_servicios, name="estado_servicios"),
         StructuredTool.from_function(coroutine=buscar_servidores, name="buscar_servidores"),
     ]

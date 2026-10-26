@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,6 +32,10 @@ type Config struct {
 	// OPSBot (opcional): sin estas variables el chat responde 503.
 	AIServiceURL    string
 	AIInternalToken string
+	// CU-03
+	HealthcheckEnabled         bool
+	HealthcheckWorkers         int
+	HealthcheckFailsToIncident int
 }
 
 func Load() (Config, error) {
@@ -70,5 +75,22 @@ func Load() (Config, error) {
 
 		AIServiceURL:    strings.TrimRight(strings.TrimSpace(os.Getenv("AI_SERVICE_URL")), "/"),
 		AIInternalToken: strings.TrimSpace(os.Getenv("AI_INTERNAL_TOKEN")),
+
+		HealthcheckEnabled:         strings.TrimSpace(os.Getenv("HEALTHCHECK_ENABLED")) != "false",
+		HealthcheckWorkers:         intEnv("HEALTHCHECK_WORKERS", 10),
+		HealthcheckFailsToIncident: intEnv("HEALTHCHECK_FAILS_TO_INCIDENT", 3),
 	}, nil
+}
+
+// intEnv reads a positive integer env var, falling back to def when unset or invalid.
+func intEnv(name string, def int) int {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return def
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 1 {
+		return def
+	}
+	return n
 }

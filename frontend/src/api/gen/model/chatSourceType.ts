@@ -16,4 +16,5 @@ export const ChatSourceType = {
   document: 'document',
   service: 'service',
   server: 'server',
+  incident: 'incident',
 } as const;

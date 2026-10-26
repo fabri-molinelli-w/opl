@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-SourceType = Literal["document", "service", "server"]
+SourceType = Literal["document", "service", "server", "incident"]
 
 
 class CamelModel(BaseModel):

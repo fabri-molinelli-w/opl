@@ -58,6 +58,20 @@ async def test_every_tool_only_sends_get_requests() -> None:
             }
         ]
     }
+    incidents = {
+        "items": [
+            {
+                "id": "inc-1",
+                "title": "Servicio Portal caído",
+                "severity": "SEV2",
+                "status": "open",
+                "serviceName": "Portal",
+                "assigneeName": "",
+                "autoCreated": True,
+                "openedAt": "2026-10-26T10:00:00Z",
+            }
+        ]
+    }
     store = DocumentStore.in_memory(HashEmbedder())
     store.replace_document("doc-1", "Reiniciar Nginx", 1, [], "sudo systemctl reload nginx")
 
@@ -65,12 +79,14 @@ async def test_every_tool_only_sends_get_requests() -> None:
         with respx.mock(assert_all_called=False) as router:
             router.get(f"{BACKEND}/api/servers").mock(return_value=httpx.Response(200, json=servers))
             router.get(f"{BACKEND}/api/services").mock(return_value=httpx.Response(200, json=services))
+            router.get(f"{BACKEND}/api/incidents").mock(return_value=httpx.Response(200, json=incidents))
             sources = SourceCollector()
             tools = build_tools(BackendClient(http, BACKEND, "jwt"), store, sources, top_k=3)
             args: dict[str, dict[str, str]] = {
                 "buscar_documentacion": {"consulta": "nginx"},
                 "estado_servicios": {"environment": "prod", "status": "DOWN"},
                 "buscar_servidores": {"texto": "web"},
+                "incidentes_activos": {},
             }
             assert {t.name for t in tools} == set(args)
             for tool in tools:
@@ -80,4 +96,8 @@ async def test_every_tool_only_sends_get_requests() -> None:
             assert {call.request.method for call in router.calls} == {"GET"}
 
     # CA-1: las tools registran de dónde salió la información.
-    assert {(s.type, s.id) for s in sources.items} == {("document", "doc-1"), ("server", "srv-1")}
+    assert {(s.type, s.id) for s in sources.items} == {
+        ("document", "doc-1"),
+        ("server", "srv-1"),
+        ("incident", "inc-1"),
+    }

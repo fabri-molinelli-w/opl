@@ -47,3 +47,6 @@ class BackendClient:
 
     async def list_servers(self, params: dict[str, str | int]) -> JSON:
         return cast(JSON, await self._get("/api/servers", params))
+
+    async def list_incidents(self, params: dict[str, str | int]) -> JSON:
+        return cast(JSON, await self._get("/api/incidents", params))
