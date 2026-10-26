@@ -147,12 +147,19 @@ func TestInventoryFiltersPaginationAndSoftDelete(t *testing.T) {
 		}
 	})
 
-	t.Run("soft deleting a server hides its services", func(t *testing.T) {
+	t.Run("soft deleting a server hides it and its services", func(t *testing.T) {
 		if err := servers.Delete(ctx, prod.ID); err != nil {
 			t.Fatalf("delete server: %v", err)
 		}
 		if _, err := servers.Get(ctx, prod.ID); !errors.Is(err, domain.ErrNotFound) {
 			t.Fatalf("expected ErrNotFound, got %v", err)
+		}
+		serverPage, err := servers.List(ctx, domain.ServerFilter{})
+		if err != nil {
+			t.Fatalf("list servers: %v", err)
+		}
+		if serverPage.Total != 1 || len(serverPage.Items) != 1 || serverPage.Items[0].Hostname != "dev-01.example.com" {
+			t.Fatalf("expected only dev server, got %#v", serverPage)
 		}
 		page, err := services.List(ctx, domain.ServiceFilter{})
 		if err != nil {

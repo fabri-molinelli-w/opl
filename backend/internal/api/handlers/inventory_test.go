@@ -100,6 +100,33 @@ func TestCreateServerHandler_ValidationDetails(t *testing.T) {
 	}
 }
 
+func TestCreateServerHandler_DuplicateHostname(t *testing.T) {
+	servers := fakeServerService{createErr: domain.NewFieldError(
+		domain.ErrConflict, "Ya existe un servidor con ese hostname", "hostname", "hostname duplicado")}
+	router, token := newInventoryRouter(t, domain.RoleSysadmin, servers, fakeServiceCatalog{})
+
+	body := strings.NewReader(`{"hostname":"web-01","ip":"192.0.2.10","environment":"prod"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/servers", body)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d (%s)", w.Code, w.Body.String())
+	}
+	var resp gen.Error
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if resp.Code != "conflict" {
+		t.Errorf("expected conflict code, got %q", resp.Code)
+	}
+	if resp.Details == nil || len(*resp.Details) != 1 || (*resp.Details)[0].Field != "hostname" {
+		t.Errorf("expected hostname detail, got %#v", resp.Details)
+	}
+}
+
 func TestGetServerHandler_IncludesServices(t *testing.T) {
 	servers := fakeServerService{server: domain.Server{
 		ID: "srv-1", Hostname: "web-01",
