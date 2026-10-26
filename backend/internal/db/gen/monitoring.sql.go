@@ -162,7 +162,7 @@ func (q *Queries) ListHealthChecks(ctx context.Context, arg ListHealthChecksPara
 }
 
 const lockServiceCheckState = `-- name: LockServiceCheckState :one
-SELECT id, name, current_status, consecutive_failures
+SELECT id, server_id, name, current_status, consecutive_failures
 FROM services
 WHERE id = $1 AND deleted_at IS NULL
 FOR UPDATE
@@ -170,6 +170,7 @@ FOR UPDATE
 
 type LockServiceCheckStateRow struct {
 	ID                  pgtype.UUID
+	ServerID            pgtype.UUID
 	Name                string
 	CurrentStatus       string
 	ConsecutiveFailures int32
@@ -180,6 +181,7 @@ func (q *Queries) LockServiceCheckState(ctx context.Context, id pgtype.UUID) (Lo
 	var i LockServiceCheckStateRow
 	err := row.Scan(
 		&i.ID,
+		&i.ServerID,
 		&i.Name,
 		&i.CurrentStatus,
 		&i.ConsecutiveFailures,

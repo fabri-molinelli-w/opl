@@ -11,7 +11,7 @@ VALUES (sqlc.arg('document_id'), sqlc.arg('version'), sqlc.arg('title'), sqlc.ar
 
 -- name: GetDocumentByID :one
 SELECT d.id, d.title, d.content_md, d.category, d.tags, d.version,
-       d.created_at, d.updated_at,
+       d.created_at, d.updated_at, d.created_by,
        cu.name AS created_by_name, uu.name AS updated_by_name
 FROM documents d
 JOIN users cu ON cu.id = d.created_by

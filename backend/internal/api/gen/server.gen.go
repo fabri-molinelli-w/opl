@@ -245,6 +245,30 @@ func (e Location) Valid() bool {
 	}
 }
 
+// Defines values for NotificationEventType.
+const (
+	DocumentUpdated  NotificationEventType = "document.updated"
+	IncidentAssigned NotificationEventType = "incident.assigned"
+	IncidentOpened   NotificationEventType = "incident.opened"
+	ServiceDown      NotificationEventType = "service.down"
+)
+
+// Valid indicates whether the value is a known member of the NotificationEventType enum.
+func (e NotificationEventType) Valid() bool {
+	switch e {
+	case DocumentUpdated:
+		return true
+	case IncidentAssigned:
+		return true
+	case IncidentOpened:
+		return true
+	case ServiceDown:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Role.
 const (
 	Admin    Role = "admin"
@@ -717,6 +741,22 @@ type LoginResponse struct {
 	User  User   `json:"user"`
 }
 
+// Notification defines model for Notification.
+type Notification struct {
+	Body      string                `json:"body"`
+	CreatedAt time.Time             `json:"createdAt"`
+	EventType NotificationEventType `json:"eventType"`
+	Id        string                `json:"id"`
+
+	// Link Ruta del frontend del recurso relacionado
+	Link  string `json:"link"`
+	Read  bool   `json:"read"`
+	Title string `json:"title"`
+}
+
+// NotificationEventType defines model for NotificationEventType.
+type NotificationEventType string
+
 // PaginatedDocuments defines model for PaginatedDocuments.
 type PaginatedDocuments struct {
 	Items    []DocumentSummary `json:"items"`
@@ -801,6 +841,11 @@ type Severity string
 
 // SortOrder defines model for SortOrder.
 type SortOrder string
+
+// UnreadCount defines model for UnreadCount.
+type UnreadCount struct {
+	Count int `json:"count"`
+}
 
 // UpdateDocumentRequest defines model for UpdateDocumentRequest.
 type UpdateDocumentRequest struct {
@@ -916,6 +961,11 @@ type ListIncidentsParams struct {
 
 	// Active Solo abiertos o en curso
 	Active *bool `form:"active,omitempty" json:"active,omitempty"`
+}
+
+// ListMyNotificationsParams defines parameters for ListMyNotifications.
+type ListMyNotificationsParams struct {
+	Unread *bool `form:"unread,omitempty" json:"unread,omitempty"`
 }
 
 // ListServersParams defines parameters for ListServers.
@@ -1050,6 +1100,18 @@ type ServerInterface interface {
 	// TransitionIncident Cambia el estado según la máquina de estados (409 si no es válida)
 	// (POST /api/incidents/{id}/transition)
 	TransitionIncident(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// ListMyNotifications Últimas 20 notificaciones del usuario autenticado
+	// (GET /api/me/notifications)
+	ListMyNotifications(w http.ResponseWriter, r *http.Request, params ListMyNotificationsParams)
+	// MarkAllMyNotificationsRead Marca todas las notificaciones como leídas
+	// (POST /api/me/notifications/read-all)
+	MarkAllMyNotificationsRead(w http.ResponseWriter, r *http.Request)
+	// CountMyUnreadNotifications Cantidad de notificaciones sin leer (campana)
+	// (GET /api/me/notifications/unread-count)
+	CountMyUnreadNotifications(w http.ResponseWriter, r *http.Request)
+	// MarkMyNotificationRead Marca una notificación como leída
+	// (POST /api/me/notifications/{id}/read)
+	MarkMyNotificationRead(w http.ResponseWriter, r *http.Request, id ResourceId)
 	// ListServers Lista servidores con filtros combinables
 	// (GET /api/servers)
 	ListServers(w http.ResponseWriter, r *http.Request, params ListServersParams)
@@ -1218,6 +1280,30 @@ func (_ Unimplemented) AddIncidentNote(w http.ResponseWriter, r *http.Request, i
 // TransitionIncident Cambia el estado según la máquina de estados (409 si no es válida)
 // (POST /api/incidents/{id}/transition)
 func (_ Unimplemented) TransitionIncident(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListMyNotifications Últimas 20 notificaciones del usuario autenticado
+// (GET /api/me/notifications)
+func (_ Unimplemented) ListMyNotifications(w http.ResponseWriter, r *http.Request, params ListMyNotificationsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkAllMyNotificationsRead Marca todas las notificaciones como leídas
+// (POST /api/me/notifications/read-all)
+func (_ Unimplemented) MarkAllMyNotificationsRead(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CountMyUnreadNotifications Cantidad de notificaciones sin leer (campana)
+// (GET /api/me/notifications/unread-count)
+func (_ Unimplemented) CountMyUnreadNotifications(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkMyNotificationRead Marca una notificación como leída
+// (POST /api/me/notifications/{id}/read)
+func (_ Unimplemented) MarkMyNotificationRead(w http.ResponseWriter, r *http.Request, id ResourceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1889,6 +1975,93 @@ func (siw *ServerInterfaceWrapper) TransitionIncident(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.TransitionIncident(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMyNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMyNotificationsParams
+
+	// ------------- Optional query parameter "unread" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "unread", r.URL.Query(), &params.Unread, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "unread"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "unread", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyNotifications(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkAllMyNotificationsRead operation middleware
+func (siw *ServerInterfaceWrapper) MarkAllMyNotificationsRead(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkAllMyNotificationsRead(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CountMyUnreadNotifications operation middleware
+func (siw *ServerInterfaceWrapper) CountMyUnreadNotifications(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CountMyUnreadNotifications(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkMyNotificationRead operation middleware
+func (siw *ServerInterfaceWrapper) MarkMyNotificationRead(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkMyNotificationRead(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2617,6 +2790,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/dashboard/summary", wrapper.GetDashboardSummary)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/me/notifications", wrapper.ListMyNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/me/notifications/unread-count", wrapper.CountMyUnreadNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/me/notifications/{id}/read", wrapper.MarkMyNotificationRead)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/me/notifications/read-all", wrapper.MarkAllMyNotificationsRead)
 	})
 
 	return r
@@ -3905,6 +4090,150 @@ func (response TransitionIncident409JSONResponse) VisitTransitionIncidentRespons
 	return err
 }
 
+type ListMyNotificationsRequestObject struct {
+	Params ListMyNotificationsParams
+}
+
+type ListMyNotificationsResponseObject interface {
+	VisitListMyNotificationsResponse(w http.ResponseWriter) error
+}
+
+type ListMyNotifications200JSONResponse []Notification
+
+func (response ListMyNotifications200JSONResponse) VisitListMyNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyNotifications401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListMyNotifications401JSONResponse) VisitListMyNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAllMyNotificationsReadRequestObject struct {
+}
+
+type MarkAllMyNotificationsReadResponseObject interface {
+	VisitMarkAllMyNotificationsReadResponse(w http.ResponseWriter) error
+}
+
+type MarkAllMyNotificationsRead204Response struct {
+}
+
+func (response MarkAllMyNotificationsRead204Response) VisitMarkAllMyNotificationsReadResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MarkAllMyNotificationsRead401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response MarkAllMyNotificationsRead401JSONResponse) VisitMarkAllMyNotificationsReadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CountMyUnreadNotificationsRequestObject struct {
+}
+
+type CountMyUnreadNotificationsResponseObject interface {
+	VisitCountMyUnreadNotificationsResponse(w http.ResponseWriter) error
+}
+
+type CountMyUnreadNotifications200JSONResponse UnreadCount
+
+func (response CountMyUnreadNotifications200JSONResponse) VisitCountMyUnreadNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CountMyUnreadNotifications401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CountMyUnreadNotifications401JSONResponse) VisitCountMyUnreadNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkMyNotificationReadRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type MarkMyNotificationReadResponseObject interface {
+	VisitMarkMyNotificationReadResponse(w http.ResponseWriter) error
+}
+
+type MarkMyNotificationRead204Response struct {
+}
+
+func (response MarkMyNotificationRead204Response) VisitMarkMyNotificationReadResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MarkMyNotificationRead401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response MarkMyNotificationRead401JSONResponse) VisitMarkMyNotificationReadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkMyNotificationRead404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response MarkMyNotificationRead404JSONResponse) VisitMarkMyNotificationReadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListServersRequestObject struct {
 	Params ListServersParams
 }
@@ -5002,6 +5331,18 @@ type StrictServerInterface interface {
 	// TransitionIncident Cambia el estado según la máquina de estados (409 si no es válida)
 	// (POST /api/incidents/{id}/transition)
 	TransitionIncident(ctx context.Context, request TransitionIncidentRequestObject) (TransitionIncidentResponseObject, error)
+	// ListMyNotifications Últimas 20 notificaciones del usuario autenticado
+	// (GET /api/me/notifications)
+	ListMyNotifications(ctx context.Context, request ListMyNotificationsRequestObject) (ListMyNotificationsResponseObject, error)
+	// MarkAllMyNotificationsRead Marca todas las notificaciones como leídas
+	// (POST /api/me/notifications/read-all)
+	MarkAllMyNotificationsRead(ctx context.Context, request MarkAllMyNotificationsReadRequestObject) (MarkAllMyNotificationsReadResponseObject, error)
+	// CountMyUnreadNotifications Cantidad de notificaciones sin leer (campana)
+	// (GET /api/me/notifications/unread-count)
+	CountMyUnreadNotifications(ctx context.Context, request CountMyUnreadNotificationsRequestObject) (CountMyUnreadNotificationsResponseObject, error)
+	// MarkMyNotificationRead Marca una notificación como leída
+	// (POST /api/me/notifications/{id}/read)
+	MarkMyNotificationRead(ctx context.Context, request MarkMyNotificationReadRequestObject) (MarkMyNotificationReadResponseObject, error)
 	// ListServers Lista servidores con filtros combinables
 	// (GET /api/servers)
 	ListServers(ctx context.Context, request ListServersRequestObject) (ListServersResponseObject, error)
@@ -5647,6 +5988,106 @@ func (sh *strictHandler) TransitionIncident(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(TransitionIncidentResponseObject); ok {
 		if err := validResponse.VisitTransitionIncidentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMyNotifications operation middleware
+func (sh *strictHandler) ListMyNotifications(w http.ResponseWriter, r *http.Request, params ListMyNotificationsParams) {
+	var request ListMyNotificationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyNotifications(ctx, request.(ListMyNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyNotificationsResponseObject); ok {
+		if err := validResponse.VisitListMyNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkAllMyNotificationsRead operation middleware
+func (sh *strictHandler) MarkAllMyNotificationsRead(w http.ResponseWriter, r *http.Request) {
+	var request MarkAllMyNotificationsReadRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkAllMyNotificationsRead(ctx, request.(MarkAllMyNotificationsReadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkAllMyNotificationsRead")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkAllMyNotificationsReadResponseObject); ok {
+		if err := validResponse.VisitMarkAllMyNotificationsReadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CountMyUnreadNotifications operation middleware
+func (sh *strictHandler) CountMyUnreadNotifications(w http.ResponseWriter, r *http.Request) {
+	var request CountMyUnreadNotificationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CountMyUnreadNotifications(ctx, request.(CountMyUnreadNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CountMyUnreadNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CountMyUnreadNotificationsResponseObject); ok {
+		if err := validResponse.VisitCountMyUnreadNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkMyNotificationRead operation middleware
+func (sh *strictHandler) MarkMyNotificationRead(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request MarkMyNotificationReadRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkMyNotificationRead(ctx, request.(MarkMyNotificationReadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkMyNotificationRead")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkMyNotificationReadResponseObject); ok {
+		if err := validResponse.VisitMarkMyNotificationReadResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

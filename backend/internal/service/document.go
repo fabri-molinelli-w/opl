@@ -44,9 +44,20 @@ type CreateDocumentInput struct {
 	AuthorID  string
 }
 
+// DocumentObserver is notified after a document is edited (CU-08 document.updated).
+type DocumentObserver interface {
+	OnDocumentUpdated(ctx context.Context, doc domain.Document, editorID string)
+}
+
 type DocumentService struct {
-	repo DocumentRepository
-	log  *slog.Logger
+	repo      DocumentRepository
+	observers []DocumentObserver
+	log       *slog.Logger
+}
+
+// AddObserver registers a consumer of document edits.
+func (s *DocumentService) AddObserver(o DocumentObserver) {
+	s.observers = append(s.observers, o)
 }
 
 func NewDocumentService(repo DocumentRepository, log *slog.Logger) *DocumentService {
@@ -190,7 +201,14 @@ func (s *DocumentService) Update(ctx context.Context, id string, update domain.D
 		return domain.Document{}, fmt.Errorf("update document: %w", err)
 	}
 	s.log.Info("document updated", "document_id", id)
-	return s.Get(ctx, id)
+	doc, err := s.Get(ctx, id)
+	if err != nil {
+		return domain.Document{}, err
+	}
+	for _, o := range s.observers {
+		o.OnDocumentUpdated(ctx, doc, update.EditorID)
+	}
+	return doc, nil
 }
 
 // ApplyDocumentUpdate merges the validated fields over the current state and

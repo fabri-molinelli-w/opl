@@ -4,6 +4,7 @@ import type { Role } from '@/api/gen/model'
 import { hasRole, ROLE_LABELS } from '@/auth/roles'
 import { useAuth } from '@/auth/useAuth'
 import { ChatPanel } from '@/features/chat/ChatPanel'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 
 interface NavItem {
   to: string
@@ -51,6 +52,7 @@ export const AppLayout = () => {
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-end gap-4 border-b border-slate-200 bg-white px-8 py-4">
+          <NotificationBell />
           <button
             type="button"
             onClick={() => setChatOpen((open) => !open)}

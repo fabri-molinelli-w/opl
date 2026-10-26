@@ -66,7 +66,7 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 
 const getDocumentByID = `-- name: GetDocumentByID :one
 SELECT d.id, d.title, d.content_md, d.category, d.tags, d.version,
-       d.created_at, d.updated_at,
+       d.created_at, d.updated_at, d.created_by,
        cu.name AS created_by_name, uu.name AS updated_by_name
 FROM documents d
 JOIN users cu ON cu.id = d.created_by
@@ -83,6 +83,7 @@ type GetDocumentByIDRow struct {
 	Version       int32
 	CreatedAt     pgtype.Timestamptz
 	UpdatedAt     pgtype.Timestamptz
+	CreatedBy     pgtype.UUID
 	CreatedByName string
 	UpdatedByName string
 }
@@ -99,6 +100,7 @@ func (q *Queries) GetDocumentByID(ctx context.Context, id pgtype.UUID) (GetDocum
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CreatedBy,
 		&i.CreatedByName,
 		&i.UpdatedByName,
 	)

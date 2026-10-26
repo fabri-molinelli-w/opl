@@ -86,23 +86,28 @@ func run(log *slog.Logger) error {
 	monitoringRepo := repository.NewMonitoringRepository(queries, pool)
 	monitoringService := service.NewMonitoringService(monitoringRepo, scheduler.NewChecker(), cfg.HealthcheckFailsToIncident, log)
 	incidentService := service.NewIncidentService(repository.NewIncidentRepository(queries, pool), log)
+	notificationService := service.NewNotificationService(repository.NewNotificationRepository(queries), log)
+	monitoringService.AddObserver(notificationService)
+	incidentService.AddObserver(notificationService)
+	documentService.AddObserver(notificationService)
 
 	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return fmt.Errorf("failed to bootstrap admin user: %w", err)
 	}
 
 	strict := handlers.NewServer(handlers.Deps{
-		DB:         pool,
-		Auth:       authService,
-		Users:      userService,
-		Servers:    serverService,
-		Services:   serviceCatalog,
-		Documents:  documentService,
-		Chat:       chatService,
-		Monitoring: monitoringService,
-		Incidents:  incidentService,
-		Dashboard:  repository.NewDashboardRepository(queries),
-		Log:        log,
+		DB:            pool,
+		Auth:          authService,
+		Users:         userService,
+		Servers:       serverService,
+		Services:      serviceCatalog,
+		Documents:     documentService,
+		Chat:          chatService,
+		Monitoring:    monitoringService,
+		Incidents:     incidentService,
+		Dashboard:     repository.NewDashboardRepository(queries),
+		Notifications: notificationService,
+		Log:           log,
 	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)
 	strictHandler := api.NewStrictHandlerWithOptions(
@@ -130,7 +135,12 @@ func run(log *slog.Logger) error {
 				_, err := monitoringService.RunCheck(ctx, id)
 				return err
 			},
-			monitoringService.CleanUp,
+			func(ctx context.Context, now time.Time) error {
+				if err := notificationService.CleanUp(ctx, now); err != nil {
+					log.Error("notification cleanup failed", "error", err)
+				}
+				return monitoringService.CleanUp(ctx, now)
+			},
 			cfg.HealthcheckWorkers, 5*time.Second, log,
 		)
 		go func() {
@@ -160,6 +170,7 @@ func run(log *slog.Logger) error {
 		return fmt.Errorf("server shutdown failed: %w", err)
 	}
 	<-schedulerDone
+	notificationService.Wait()
 	log.Info("server stopped")
 	return nil
 }

@@ -16,7 +16,7 @@ FROM services
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: LockServiceCheckState :one
-SELECT id, name, current_status, consecutive_failures
+SELECT id, server_id, name, current_status, consecutive_failures
 FROM services
 WHERE id = $1 AND deleted_at IS NULL
 FOR UPDATE;

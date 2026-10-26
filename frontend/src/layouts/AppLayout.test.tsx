@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { render, screen } from '@testing-library/react'
 import type { Role, User } from '@/api/gen/model'
@@ -27,10 +28,19 @@ const renderLayout = (role: Role) => {
   setStoredUser(userWithRole(role))
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(jsonResponse(200, userWithRole(role))),
+    // Una Response nueva por llamada: el layout ahora también consulta la campana (CU-08).
+    vi.fn((input: RequestInfo | URL) =>
+      Promise.resolve(
+        String(input).endsWith('/unread-count')
+          ? jsonResponse(200, { count: 0 })
+          : jsonResponse(200, userWithRole(role)),
+      ),
+    ),
   )
 
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
+    <QueryClientProvider client={client}>
     <MemoryRouter initialEntries={['/']}>
       <AuthProvider>
         <Routes>
@@ -40,7 +50,8 @@ const renderLayout = (role: Role) => {
           </Route>
         </Routes>
       </AuthProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 

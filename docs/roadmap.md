@@ -36,7 +36,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 | ✅ | CU-03 | Health checks + apertura automática de incidentes |
 | ✅ | CU-10 | Gestión de incidentes (sin deploys relacionados ni post-mortem) |
 | ✅ | CU-04 | Dashboard etapa 2 (estado de servicios, incidentes, gráficos 24 h) |
-| ⬜ | CU-08 | Notificaciones internas (campana) |
+| ✅ | CU-08 | Notificaciones internas (campana; preferencias por usuario pendientes) |
 
 ## Fase 3 — OPLBot
 
