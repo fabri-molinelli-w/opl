@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,6 +13,8 @@ class Settings(BaseSettings):
     backend_url: str = "http://localhost:8080"
     ai_internal_token: SecretStr
 
+    # auto: Gemini (generativelanguage.googleapis.com) usa la integración nativa; el resto, la API de OpenAI.
+    llm_provider: Literal["auto", "openai", "google"] = "auto"
     llm_base_url: str
     llm_api_key: SecretStr
     llm_model: str
