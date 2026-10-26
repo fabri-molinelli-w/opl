@@ -135,3 +135,12 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
   PostgreSQL, no en memoria. Los destinos de chequeo solo los configura `sysadmin`, lo que acota el riesgo de que el
   backend se use para sondear la red interna (SSRF).
 
+## ADR-025 · Gemini con su integración nativa de LangChain
+- **Fecha:** 2026-10-26
+- **Decisión:** si `LLM_BASE_URL` apunta a Gemini (o `LLM_PROVIDER=google`), OPSBot usa `langchain-google-genai`
+  en lugar de `ChatOpenAI`. Los demás proveedores siguen por la API compatible con OpenAI.
+- **Motivo:** los modelos Gemini 3 devuelven una `thought_signature` en cada llamada a una tool y exigen recibirla de
+  vuelta en el paso siguiente. `ChatOpenAI` la descarta (se reprodujo con un servidor simulado), así que cualquier
+  pregunta que usara una tool fallaba. Se detectó al probar con el LLM real: "hola" respondía y "¿cómo reinicio
+  Nginx?" no.
+
