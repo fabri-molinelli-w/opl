@@ -38,6 +38,8 @@ const (
 	OperationDeleteDocument       = "DeleteDocument"
 	OperationListDocumentVersions = "ListDocumentVersions"
 	OperationGetDocumentVersion   = "GetDocumentVersion"
+
+	OperationChatWithOpsbot = "ChatWithOpsbot"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -80,6 +82,8 @@ func NewPolicy() Policy {
 			OperationDeleteDocument:       domain.RoleSysadmin,
 			OperationListDocumentVersions: domain.RoleSoporte,
 			OperationGetDocumentVersion:   domain.RoleSoporte,
+
+			OperationChatWithOpsbot: domain.RoleSoporte,
 		},
 	}
 }

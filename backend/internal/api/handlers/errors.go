@@ -51,6 +51,8 @@ func mapDomainError(err error) httpError {
 		return httpError{http.StatusNotFound, "not_found", "El recurso no existe", details}
 	case errors.Is(err, domain.ErrConflict):
 		return httpError{http.StatusConflict, "conflict", userMessage(err, "El recurso ya existe o la operación no es válida"), details}
+	case errors.Is(err, domain.ErrUnavailable):
+		return httpError{http.StatusServiceUnavailable, "unavailable", userMessage(err, "Servicio no disponible"), details}
 	default:
 		return httpError{http.StatusInternalServerError, "internal_error", "Error interno del servidor", details}
 	}

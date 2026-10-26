@@ -4,7 +4,7 @@
 #   golangci-lint v2.x   https://golangci-lint.run/welcome/install/
 #   node >= 24           Vite 8 / Orval 8 / Vitest 5
 
-.PHONY: generate verify run-backend seed test-integration
+.PHONY: generate verify verify-ai setup-ai run-ai run-backend seed test-integration
 
 generate:
 	cd backend && oapi-codegen -config oapi-codegen.yaml ../api/openapi.yaml
@@ -19,6 +19,21 @@ verify:
 	cd frontend && npm run lint
 	cd frontend && npm run typecheck
 	cd frontend && npm run test -- --run
+	@if [ -x ai-service/.venv/bin/python ]; then $(MAKE) verify-ai; else echo "ai-service: correr make setup-ai para verificarlo"; fi
+
+# --- OPSBot (ai-service, Python >= 3.12) ---
+setup-ai:
+	cd ai-service && python3 -m venv .venv && .venv/bin/pip install -q --upgrade pip && .venv/bin/pip install -q -e '.[dev]'
+
+verify-ai:
+	cd ai-service && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy . && .venv/bin/pytest -q
+
+# Requiere make setup-ai y las variables LLM_* y AI_INTERNAL_TOKEN en .env.
+# Escucha solo en 127.0.0.1: el ai-service nunca se expone (lo llama el backend).
+run-ai:
+	@test -f .env || { echo "Falta .env: copiá .env.example y completalo"; exit 1; }
+	@set -a; . ./.env; set +a; \
+	cd ai-service && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 # Requiere la base local: docker compose up -d postgres
 # Exportá HTTP_PORT / DATABASE_URL para sobrescribir los defaults.

@@ -15,6 +15,7 @@ tags:
   - name: servers
   - name: services
   - name: documents
+  - name: chat
 
 paths:
   /api/health:
@@ -646,6 +647,34 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/chat:
+    post:
+      tags: [chat]
+      operationId: chatWithOpsbot
+      summary: Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
+      x-min-role: soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Respuesta de OPSBot con sus fuentes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
@@ -1206,6 +1235,46 @@ components:
           type: string
           format: date-time
 
+    ChatRequest:
+      type: object
+      required: [sessionId, message]
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+          maxLength: 100
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+
+    ChatSourceType:
+      type: string
+      enum: [document, service, server]
+
+    ChatSource:
+      type: object
+      required: [type, id, title]
+      properties:
+        type:
+          $ref: "#/components/schemas/ChatSourceType"
+        id:
+          type: string
+        title:
+          type: string
+
+    ChatResponse:
+      type: object
+      required: [answer, sources]
+      properties:
+        answer:
+          type: string
+          description: Respuesta en Markdown
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatSource"
+
   responses:
     BadRequest:
       description: Datos inválidos
@@ -1229,6 +1298,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Conflict:
       description: Conflicto (duplicado o transición inválida)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unavailable:
+      description: Dependencia no disponible (por ejemplo, OPSBot)
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

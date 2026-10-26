@@ -57,6 +57,28 @@ jobs:
       - name: build
         run: npm run build
 
+  ai-service:
+    name: ai-service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ai-service/pyproject.toml
+      - name: pip install
+        run: pip install -e '.[dev]'
+      - name: ruff
+        run: ruff check . && ruff format --check .
+      - name: mypy
+        run: mypy .
+      - name: pytest
+        run: pytest -q
+
   contract:
     name: contract
     runs-on: ubuntu-latest

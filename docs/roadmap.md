@@ -42,8 +42,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 
 | Estado | CU | Tarea |
 |---|---|---|
-| ⬜ | CU-09 | ai-service: ingesta de documentos en ChromaDB |
-| ⬜ | CU-09 | ai-service: chat con RAG + tools de solo lectura, panel lateral en el frontend |
+| ✅ | CU-09 | ai-service: ingesta de documentos en ChromaDB (sincronización por versión, ADR-023) |
+| ✅ | CU-09 | ai-service: chat con RAG + tools de solo lectura, panel lateral en el frontend |
 
 > El chatbot integrado es un criterio de evaluación del TP (hasta 2 puntos). Aunque no sea el foco
 > de esta etapa, tiene que estar antes de la entrega final.

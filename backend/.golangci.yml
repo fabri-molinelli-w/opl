@@ -13,6 +13,7 @@ linters:
         - problemas
         - configuracion
         - autor
+        - momento
   exclusions:
     paths:
       - internal/api/gen/

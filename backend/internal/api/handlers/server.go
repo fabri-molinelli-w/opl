@@ -56,6 +56,7 @@ type Deps struct {
 	Servers   ServerService
 	Services  ServiceCatalog
 	Documents DocumentService
+	Chat      ChatService
 	Log       *slog.Logger
 }
 
@@ -68,6 +69,7 @@ type Server struct {
 	servers   ServerService
 	services  ServiceCatalog
 	documents DocumentService
+	chat      ChatService
 	log       *slog.Logger
 }
 
@@ -79,6 +81,7 @@ func NewServer(deps Deps) *Server {
 		servers:   deps.Servers,
 		services:  deps.Services,
 		documents: deps.Documents,
+		chat:      deps.Chat,
 		log:       deps.Log,
 	}
 }

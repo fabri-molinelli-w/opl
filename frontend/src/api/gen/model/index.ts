@@ -11,6 +11,10 @@
 
 export * from './badRequestResponse.ts';
 export * from './changePasswordRequest.ts';
+export * from './chatRequest.ts';
+export * from './chatResponse.ts';
+export * from './chatSource.ts';
+export * from './chatSourceType.ts';
 export * from './checkType.ts';
 export * from './conflictResponse.ts';
 export * from './createDocumentRequest.ts';
@@ -51,6 +55,7 @@ export * from './serviceUnavailableResponse.ts';
 export * from './severity.ts';
 export * from './sortOrder.ts';
 export * from './unauthorizedResponse.ts';
+export * from './unavailableResponse.ts';
 export * from './updateDocumentRequest.ts';
 export * from './updateServerRequest.ts';
 export * from './updateServiceRequest.ts';

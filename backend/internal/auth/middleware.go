@@ -43,19 +43,24 @@ func Authorize(policy Policy, tokens TokenParser, users UserLookup) api.StrictMi
 				return nil, domain.ErrForbidden
 			}
 
-			return next(WithUser(ctx, user), w, r, request)
+			ctx = WithToken(WithUser(ctx, user), bearerToken(r))
+			return next(ctx, w, r, request)
 		}
 	}
 }
 
+const bearerPrefix = "Bearer "
+
+func bearerToken(r *http.Request) string {
+	return strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), bearerPrefix))
+}
+
 func authenticate(ctx context.Context, r *http.Request, tokens TokenParser, users UserLookup) (domain.User, error) {
-	const prefix = "Bearer "
-	header := r.Header.Get("Authorization")
-	if !strings.HasPrefix(header, prefix) {
+	if !strings.HasPrefix(r.Header.Get("Authorization"), bearerPrefix) {
 		return domain.User{}, domain.ErrUnauthenticated
 	}
 
-	claims, err := tokens.Parse(strings.TrimSpace(strings.TrimPrefix(header, prefix)))
+	claims, err := tokens.Parse(bearerToken(r))
 	if err != nil {
 		return domain.User{}, domain.ErrUnauthenticated
 	}
