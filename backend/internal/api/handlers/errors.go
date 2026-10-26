@@ -14,6 +14,7 @@ type httpError struct {
 	status  int
 	code    string
 	message string
+	details []domain.FieldError
 }
 
 // NewStrictOptions returns the strict options that centralize error handling:
@@ -38,19 +39,20 @@ func NewStrictOptions(log *slog.Logger) gen.StrictHTTPServerOptions {
 }
 
 func mapDomainError(err error) httpError {
+	details := domain.FieldErrors(err)
 	switch {
 	case errors.Is(err, domain.ErrValidation):
-		return httpError{http.StatusBadRequest, "validation_error", userMessage(err, "Datos inválidos")}
+		return httpError{http.StatusBadRequest, "validation_error", userMessage(err, "Datos inválidos"), details}
 	case errors.Is(err, domain.ErrUnauthenticated):
-		return httpError{http.StatusUnauthorized, "unauthenticated", "Credenciales inválidas o sesión expirada"}
+		return httpError{http.StatusUnauthorized, "unauthenticated", "Credenciales inválidas o sesión expirada", details}
 	case errors.Is(err, domain.ErrForbidden):
-		return httpError{http.StatusForbidden, "forbidden", "No tenés permisos para realizar esta acción"}
+		return httpError{http.StatusForbidden, "forbidden", "No tenés permisos para realizar esta acción", details}
 	case errors.Is(err, domain.ErrNotFound):
-		return httpError{http.StatusNotFound, "not_found", "El recurso no existe"}
+		return httpError{http.StatusNotFound, "not_found", "El recurso no existe", details}
 	case errors.Is(err, domain.ErrConflict):
-		return httpError{http.StatusConflict, "conflict", userMessage(err, "El recurso ya existe o la operación no es válida")}
+		return httpError{http.StatusConflict, "conflict", userMessage(err, "El recurso ya existe o la operación no es válida"), details}
 	default:
-		return httpError{http.StatusInternalServerError, "internal_error", "Error interno del servidor"}
+		return httpError{http.StatusInternalServerError, "internal_error", "Error interno del servidor", details}
 	}
 }
 
@@ -66,6 +68,13 @@ func writeError(w http.ResponseWriter, log *slog.Logger, mapped httpError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(mapped.status)
 	body := gen.Error{Code: mapped.code, Message: mapped.message}
+	if len(mapped.details) > 0 {
+		details := make([]gen.ErrorDetail, 0, len(mapped.details))
+		for _, detail := range mapped.details {
+			details = append(details, gen.ErrorDetail{Field: detail.Field, Issue: detail.Issue})
+		}
+		body.Details = &details
+	}
 	if err := json.NewEncoder(w).Encode(body); err != nil {
 		log.Error("failed to encode error response", "error", err)
 	}

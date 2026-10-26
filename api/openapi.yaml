@@ -12,6 +12,8 @@ tags:
   - name: system
   - name: auth
   - name: users
+  - name: servers
+  - name: services
 
 paths:
   /api/health:
@@ -169,10 +171,299 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  /api/servers:
+    get:
+      tags: [servers]
+      operationId: listServers
+      summary: Lista servidores con filtros combinables
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            $ref: "#/components/schemas/Environment"
+        - name: os
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Servidores paginados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedServers"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [servers]
+      operationId: createServer
+      summary: Crea un servidor
+      x-min-role: sysadmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServerRequest"
+      responses:
+        "201":
+          description: Servidor creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Server"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/servers/{id}:
+    get:
+      tags: [servers]
+      operationId: getServer
+      summary: Ficha de un servidor con sus servicios
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Servidor con servicios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Server"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [servers]
+      operationId: updateServer
+      summary: Actualiza parcialmente un servidor
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServerRequest"
+      responses:
+        "200":
+          description: Servidor actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Server"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags: [servers]
+      operationId: deleteServer
+      summary: Baja lógica de un servidor y sus servicios
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Servidor dado de baja
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/services:
+    get:
+      tags: [services]
+      operationId: listServices
+      summary: Lista servicios con filtros combinables
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: serverId
+          in: query
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            $ref: "#/components/schemas/Environment"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ServiceStatus"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ServiceType"
+      responses:
+        "200":
+          description: Servicios paginados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedServices"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [services]
+      operationId: createService
+      summary: Crea un servicio
+      x-min-role: sysadmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Servicio creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/services/{id}:
+    get:
+      tags: [services]
+      operationId: getService
+      summary: Detalle de un servicio
+      x-min-role: soporte
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Servicio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [services]
+      operationId: updateService
+      summary: Actualiza parcialmente un servicio
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceRequest"
+      responses:
+        "200":
+          description: Servicio actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [services]
+      operationId: deleteService
+      summary: Baja lógica de un servicio
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Servicio dado de baja
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
 components:
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -312,6 +603,235 @@ components:
     Severity:
       type: string
       enum: [SEV1, SEV2, SEV3, SEV4]
+
+    Location:
+      type: string
+      enum: [onprem, cloud]
+
+    ServiceType:
+      type: string
+      enum: [web, db, queue, other]
+
+    CheckType:
+      type: string
+      enum: [http, tcp]
+
+    Server:
+      type: object
+      required: [id, hostname, ip, environment, os, location, owner, tags, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        hostname:
+          type: string
+          minLength: 1
+        ip:
+          type: string
+          description: IPv4 o IPv6 válida
+          example: 192.0.2.11
+        environment:
+          $ref: "#/components/schemas/Environment"
+        os:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
+        owner:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        services:
+          type: array
+          description: Presente en GET /api/servers/{id}
+          items:
+            $ref: "#/components/schemas/Service"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateServerRequest:
+      type: object
+      required: [hostname, ip, environment]
+      properties:
+        hostname:
+          type: string
+          minLength: 1
+        ip:
+          type: string
+        environment:
+          $ref: "#/components/schemas/Environment"
+        os:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
+        owner:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateServerRequest:
+      type: object
+      minProperties: 1
+      properties:
+        hostname:
+          type: string
+          minLength: 1
+        ip:
+          type: string
+        environment:
+          $ref: "#/components/schemas/Environment"
+        os:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
+        owner:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    Service:
+      type: object
+      required: [id, serverId, name, type, port, checkType, checkTarget, expectedStatus, intervalSeconds, latencyThresholdMs, currentStatus, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        serverId:
+          type: string
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ServiceType"
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        checkType:
+          $ref: "#/components/schemas/CheckType"
+        checkTarget:
+          type: string
+        expectedStatus:
+          type: integer
+          minimum: 100
+          maximum: 599
+          default: 200
+        intervalSeconds:
+          type: integer
+          minimum: 1
+          default: 30
+        latencyThresholdMs:
+          type: integer
+          minimum: 1
+          default: 1000
+        currentStatus:
+          $ref: "#/components/schemas/ServiceStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateServiceRequest:
+      type: object
+      required: [serverId, name, type, port, checkType, checkTarget]
+      properties:
+        serverId:
+          type: string
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ServiceType"
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        checkType:
+          $ref: "#/components/schemas/CheckType"
+        checkTarget:
+          type: string
+        expectedStatus:
+          type: integer
+          minimum: 100
+          maximum: 599
+          default: 200
+        intervalSeconds:
+          type: integer
+          minimum: 1
+          default: 30
+        latencyThresholdMs:
+          type: integer
+          minimum: 1
+          default: 1000
+
+    UpdateServiceRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ServiceType"
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        checkType:
+          $ref: "#/components/schemas/CheckType"
+        checkTarget:
+          type: string
+        expectedStatus:
+          type: integer
+          minimum: 100
+          maximum: 599
+        intervalSeconds:
+          type: integer
+          minimum: 1
+        latencyThresholdMs:
+          type: integer
+          minimum: 1
+
+    PaginatedServers:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Server"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    PaginatedServices:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
 
   responses:
     BadRequest:

@@ -2,13 +2,9 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	dbgen "github.com/fabri-molinelli-w/opl/backend/internal/db/gen"
 	"github.com/fabri-molinelli-w/opl/backend/internal/domain"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -111,17 +107,6 @@ func (r *UserRepository) CountAdmins(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func mapError(err error) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.ErrNotFound
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return domain.ErrConflict
-	}
-	return err
-}
-
 func toDomainUser(row dbgen.User) domain.User {
 	return domain.User{
 		ID:           uuidToString(row.ID),
@@ -133,20 +118,4 @@ func toDomainUser(row dbgen.User) domain.User {
 		CreatedAt:    row.CreatedAt.Time,
 		UpdatedAt:    row.UpdatedAt.Time,
 	}
-}
-
-func uuidToString(u pgtype.UUID) string {
-	if !u.Valid {
-		return ""
-	}
-	b := u.Bytes
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
-}
-
-func uuidFromString(s string) (pgtype.UUID, error) {
-	var u pgtype.UUID
-	if err := u.Scan(s); err != nil {
-		return pgtype.UUID{}, fmt.Errorf("invalid uuid: %w", err)
-	}
-	return u, nil
 }

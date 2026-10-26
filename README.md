@@ -29,6 +29,16 @@ docker compose up -d --build
 # Frontend: http://localhost:5173  ·  API: http://localhost:8080/api/health
 ```
 
+### Datos de demo (solo desarrollo)
+
+```bash
+docker compose up -d postgres
+make run-backend        # aplica migraciones (dejar corriendo o cortar después)
+make seed               # 3 servidores ficticios + sus servicios, idempotente
+```
+
+`make seed` no se ejecuta en producción ni en el arranque del backend.
+
 ## Demo end-to-end
 
 1. `docker compose stop lab-nginx` → el servicio pasa a DOWN.

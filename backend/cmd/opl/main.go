@@ -63,16 +63,28 @@ func run(log *slog.Logger) error {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
-	userRepo := repository.NewUserRepository(dbgen.New(pool))
+	queries := dbgen.New(pool)
+	userRepo := repository.NewUserRepository(queries)
+	serverRepo := repository.NewServerRepository(queries, pool)
+	serviceRepo := repository.NewServiceRepository(queries)
 	tokens := auth.NewTokenIssuer(cfg.JWTSecret, cfg.JWTTTL)
 	authService := service.NewAuthService(userRepo, tokens, log)
 	userService := service.NewUserService(userRepo, log)
+	serverService := service.NewServerService(serverRepo, serviceRepo, log)
+	serviceCatalog := service.NewServiceCatalog(serviceRepo, serverRepo, log)
 
 	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return fmt.Errorf("failed to bootstrap admin user: %w", err)
 	}
 
-	strict := handlers.NewServer(pool, authService, userService, log)
+	strict := handlers.NewServer(handlers.Deps{
+		DB:       pool,
+		Auth:     authService,
+		Users:    userService,
+		Servers:  serverService,
+		Services: serviceCatalog,
+		Log:      log,
+	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)
 	strictHandler := api.NewStrictHandlerWithOptions(
 		strict,

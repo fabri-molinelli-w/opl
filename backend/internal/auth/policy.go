@@ -18,6 +18,17 @@ const (
 	OperationListUsers      = "ListUsers"
 	OperationCreateUser     = "CreateUser"
 	OperationUpdateUser     = "UpdateUser"
+
+	OperationListServers   = "ListServers"
+	OperationCreateServer  = "CreateServer"
+	OperationGetServer     = "GetServer"
+	OperationUpdateServer  = "UpdateServer"
+	OperationDeleteServer  = "DeleteServer"
+	OperationListServices  = "ListServices"
+	OperationCreateService = "CreateService"
+	OperationGetService    = "GetService"
+	OperationUpdateService = "UpdateService"
+	OperationDeleteService = "DeleteService"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -40,6 +51,17 @@ func NewPolicy() Policy {
 			OperationListUsers:      domain.RoleAdmin,
 			OperationCreateUser:     domain.RoleAdmin,
 			OperationUpdateUser:     domain.RoleAdmin,
+
+			OperationListServers:   domain.RoleSoporte,
+			OperationCreateServer:  domain.RoleSysadmin,
+			OperationGetServer:     domain.RoleSoporte,
+			OperationUpdateServer:  domain.RoleSysadmin,
+			OperationDeleteServer:  domain.RoleSysadmin,
+			OperationListServices:  domain.RoleSoporte,
+			OperationCreateService: domain.RoleSysadmin,
+			OperationGetService:    domain.RoleSoporte,
+			OperationUpdateService: domain.RoleSysadmin,
+			OperationDeleteService: domain.RoleSysadmin,
 		},
 	}
 }

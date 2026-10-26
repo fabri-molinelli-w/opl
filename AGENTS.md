@@ -128,6 +128,8 @@ Un cambio **no está terminado** hasta que la verificación del servicio afectad
 - Idioma: código, identificadores y commits en **inglés**; documentación, UI y respuestas de OPLBot en **español**.
 - Commits: Conventional Commits (`feat(backend): add server inventory endpoints`). Un caso de uso = una rama `feat/cu-XX-nombre`.
 - Fechas: UTC en base y API (RFC 3339); se formatean a hora local solo en el frontend.
+- Nombres de contrato: JSON y query params en **camelCase** (`pageSize`, `serverId`, `createdAt`); columnas y queries SQL en **snake_case**. El mapeo ocurre en handlers y repositorios.
+- Datos de demo: `make seed` es manual, idempotente y **solo para desarrollo**; requiere Postgres local y migraciones aplicadas.
 - IDs: UUID v4.
 - Baja lógica (`deleted_at`) para servidores, servicios y documentos.
 - Notificaciones solo internas (tabla `notifications`); no hay email ni Telegram por ahora.
