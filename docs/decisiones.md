@@ -109,3 +109,19 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Decisión:** a partir de CU-05 el desarrollo se hace con Claude Code (Claude Opus) en lugar de OpenCode, porque se agotaron los créditos de OpenCode Zen a dos días de la entrega.
 - **Motivo:** mantener el ritmo. La metodología no cambia: AGENTS.md, spec → contrato → `make generate` → service → handler → UI, loops con `make verify`, plan por CU en `docs/plans/` y revisión humana en el punto de control.
 
+## ADR-022 · Embeddings con fastembed (ONNX) en lugar de sentence-transformers
+- **Fecha:** 2026-10-26
+- **Decisión:** los embeddings se calculan localmente con `fastembed` y el modelo multilingüe
+  `paraphrase-multilingual-MiniLM-L12-v2`. Reemplaza a sentence-transformers + `multilingual-e5-small` (ADR-005).
+- **Motivo:** mismo principio (local, multilingüe, sin enviar contenido a terceros), pero sin PyTorch: la
+  instalación pasa de varios GB a unos cientos de MB, clave para el servidor Debian. El modelo es configurable
+  con `EMBEDDINGS_MODEL`.
+
+## ADR-023 · Sincronización de la documentación por versión (pull)
+- **Fecha:** 2026-10-26
+- **Decisión:** el ai-service sincroniza Chroma antes de responder comparando `id` + `version` de los documentos
+  contra lo indexado, con el JWT del usuario. No hay endpoint `/ingest` ni llamadas del backend al ai-service al
+  guardar un documento.
+- **Motivo:** el ai-service queda de solo lectura, no hay estado `index_status` que mantener y un documento
+  editado se refleja en la siguiente consulta. Con cientos de documentos el costo es una consulta paginada.
+

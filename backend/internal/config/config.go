@@ -28,6 +28,9 @@ type Config struct {
 	JWTTTL        time.Duration
 	AdminEmail    string
 	AdminPassword string
+	// OPSBot (opcional): sin estas variables el chat responde 503.
+	AIServiceURL    string
+	AIInternalToken string
 }
 
 func Load() (Config, error) {
@@ -64,5 +67,8 @@ func Load() (Config, error) {
 		JWTTTL:        jwtTTL,
 		AdminEmail:    strings.TrimSpace(os.Getenv("ADMIN_EMAIL")),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+
+		AIServiceURL:    strings.TrimRight(strings.TrimSpace(os.Getenv("AI_SERVICE_URL")), "/"),
+		AIInternalToken: strings.TrimSpace(os.Getenv("AI_INTERNAL_TOKEN")),
 	}, nil
 }

@@ -1,0 +1,56 @@
+[project]
+name = "opl-ai-service"
+version = "0.1.0"
+description = "OPSBot: asistente de OPL (RAG sobre la documentación + tools de solo lectura)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.162.0",
+    "uvicorn[standard]==0.54.0",
+    "httpx==0.28.1",
+    "pydantic-settings==2.16.1",
+    "langchain==1.4.7",
+    "langchain-core==1.7.0",
+    "langchain-openai==1.7.2",
+    "chromadb==1.5.9",
+    "fastembed==0.9.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.1",
+    "respx==0.23.1",
+    "ruff==0.17.2",
+    "mypy==2.4.0",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["chroma_data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "S", "ASYNC"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+exclude = ["chroma_data", ".venv"]
+
+[[tool.mypy.overrides]]
+module = ["chromadb.*", "fastembed.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

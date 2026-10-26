@@ -17,6 +17,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ChatSourceType.
+const (
+	ChatSourceTypeDocument ChatSourceType = "document"
+	ChatSourceTypeServer   ChatSourceType = "server"
+	ChatSourceTypeService  ChatSourceType = "service"
+)
+
+// Valid indicates whether the value is a known member of the ChatSourceType enum.
+func (e ChatSourceType) Valid() bool {
+	switch e {
+	case ChatSourceTypeDocument:
+		return true
+	case ChatSourceTypeServer:
+		return true
+	case ChatSourceTypeService:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CheckType.
 const (
 	Http CheckType = "http"
@@ -271,6 +292,29 @@ type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword"`
 	NewPassword     string `json:"newPassword"`
 }
+
+// ChatRequest defines model for ChatRequest.
+type ChatRequest struct {
+	Message   string `json:"message"`
+	SessionId string `json:"sessionId"`
+}
+
+// ChatResponse defines model for ChatResponse.
+type ChatResponse struct {
+	// Answer Respuesta en Markdown
+	Answer  string       `json:"answer"`
+	Sources []ChatSource `json:"sources"`
+}
+
+// ChatSource defines model for ChatSource.
+type ChatSource struct {
+	Id    string         `json:"id"`
+	Title string         `json:"title"`
+	Type  ChatSourceType `json:"type"`
+}
+
+// ChatSourceType defines model for ChatSourceType.
+type ChatSourceType string
 
 // CheckType defines model for CheckType.
 type CheckType string
@@ -574,6 +618,9 @@ type ServiceUnavailable = Health
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
+// Unavailable defines model for Unavailable.
+type Unavailable = Error
+
 // ListDocumentsParams defines parameters for ListDocuments.
 type ListDocumentsParams struct {
 	Page     *Page     `form:"page,omitempty" json:"page,omitempty"`
@@ -613,6 +660,9 @@ type LoginJSONRequestBody = LoginRequest
 // ChangeOwnPasswordJSONRequestBody defines body for ChangeOwnPassword for application/json ContentType.
 type ChangeOwnPasswordJSONRequestBody = ChangePasswordRequest
 
+// ChatWithOpsbotJSONRequestBody defines body for ChatWithOpsbot for application/json ContentType.
+type ChatWithOpsbotJSONRequestBody = ChatRequest
+
 // CreateDocumentJSONRequestBody defines body for CreateDocument for application/json ContentType.
 type CreateDocumentJSONRequestBody = CreateDocumentRequest
 
@@ -648,6 +698,9 @@ type ServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(w http.ResponseWriter, r *http.Request)
+	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
+	// (POST /api/chat)
+	ChatWithOpsbot(w http.ResponseWriter, r *http.Request)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams)
@@ -735,6 +788,12 @@ func (_ Unimplemented) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 // ChangeOwnPassword Cambia la contraseña del usuario autenticado
 // (POST /api/auth/me/password)
 func (_ Unimplemented) ChangeOwnPassword(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
+// (POST /api/chat)
+func (_ Unimplemented) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -912,6 +971,20 @@ func (siw *ServerInterfaceWrapper) ChangeOwnPassword(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangeOwnPassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ChatWithOpsbot operation middleware
+func (siw *ServerInterfaceWrapper) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChatWithOpsbot(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1835,6 +1908,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/documents/{id}/versions/{version}", wrapper.GetDocumentVersion)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/chat", wrapper.ChatWithOpsbot)
+	})
 
 	return r
 }
@@ -1850,6 +1926,8 @@ type NotFoundJSONResponse Error
 type ServiceUnavailableJSONResponse Health
 
 type UnauthorizedJSONResponse Error
+
+type UnavailableJSONResponse Error
 
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
@@ -1976,6 +2054,84 @@ func (response ChangeOwnPassword401JSONResponse) VisitChangeOwnPasswordResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChatWithOpsbotRequestObject struct {
+	Body *ChatWithOpsbotJSONRequestBody
+}
+
+type ChatWithOpsbotResponseObject interface {
+	VisitChatWithOpsbotResponse(w http.ResponseWriter) error
+}
+
+type ChatWithOpsbot200JSONResponse ChatResponse
+
+func (response ChatWithOpsbot200JSONResponse) VisitChatWithOpsbotResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChatWithOpsbot400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ChatWithOpsbot400JSONResponse) VisitChatWithOpsbotResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChatWithOpsbot401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ChatWithOpsbot401JSONResponse) VisitChatWithOpsbotResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChatWithOpsbot403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ChatWithOpsbot403JSONResponse) VisitChatWithOpsbotResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChatWithOpsbot503JSONResponse struct{ UnavailableJSONResponse }
+
+func (response ChatWithOpsbot503JSONResponse) VisitChatWithOpsbotResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3453,6 +3609,9 @@ type StrictServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(ctx context.Context, request ChangeOwnPasswordRequestObject) (ChangeOwnPasswordResponseObject, error)
+	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
+	// (POST /api/chat)
+	ChatWithOpsbot(ctx context.Context, request ChatWithOpsbotRequestObject) (ChatWithOpsbotResponseObject, error)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(ctx context.Context, request ListDocumentsRequestObject) (ListDocumentsResponseObject, error)
@@ -3639,6 +3798,37 @@ func (sh *strictHandler) ChangeOwnPassword(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangeOwnPasswordResponseObject); ok {
 		if err := validResponse.VisitChangeOwnPasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ChatWithOpsbot operation middleware
+func (sh *strictHandler) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
+	var request ChatWithOpsbotRequestObject
+
+	var body ChatWithOpsbotJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ChatWithOpsbot(ctx, request.(ChatWithOpsbotRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ChatWithOpsbot")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ChatWithOpsbotResponseObject); ok {
+		if err := validResponse.VisitChatWithOpsbotResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

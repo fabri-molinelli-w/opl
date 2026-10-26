@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/fabri-molinelli-w/opl/backend/db"
+	"github.com/fabri-molinelli-w/opl/backend/internal/aiclient"
 	api "github.com/fabri-molinelli-w/opl/backend/internal/api/gen"
 	"github.com/fabri-molinelli-w/opl/backend/internal/api/handlers"
 	"github.com/fabri-molinelli-w/opl/backend/internal/auth"
@@ -74,6 +75,13 @@ func run(log *slog.Logger) error {
 	serviceCatalog := service.NewServiceCatalog(serviceRepo, serverRepo, log)
 	documentRepo := repository.NewDocumentRepository(queries, pool)
 	documentService := service.NewDocumentService(documentRepo, log)
+	var opsbot service.OpsbotClient
+	if cfg.AIServiceURL != "" && cfg.AIInternalToken != "" {
+		opsbot = aiclient.New(cfg.AIServiceURL, cfg.AIInternalToken)
+	} else {
+		log.Warn("OPSBot disabled: AI_SERVICE_URL or AI_INTERNAL_TOKEN not set")
+	}
+	chatService := service.NewChatService(opsbot, log)
 
 	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return fmt.Errorf("failed to bootstrap admin user: %w", err)
@@ -86,6 +94,7 @@ func run(log *slog.Logger) error {
 		Servers:   serverService,
 		Services:  serviceCatalog,
 		Documents: documentService,
+		Chat:      chatService,
 		Log:       log,
 	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)

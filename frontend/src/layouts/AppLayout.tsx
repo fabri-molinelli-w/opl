@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import type { Role } from '@/api/gen/model'
 import { hasRole, ROLE_LABELS } from '@/auth/roles'
 import { useAuth } from '@/auth/useAuth'
+import { ChatPanel } from '@/features/chat/ChatPanel'
 
 interface NavItem {
   to: string
@@ -21,6 +23,7 @@ const NAV_ITEMS: readonly NavItem[] = [
 export const AppLayout = () => {
   const { user, logout } = useAuth()
   const items = NAV_ITEMS.filter((item) => hasRole(user?.role, item.minRole))
+  const [chatOpen, setChatOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-slate-100 text-slate-900">
@@ -47,6 +50,14 @@ export const AppLayout = () => {
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-end gap-4 border-b border-slate-200 bg-white px-8 py-4">
+          <button
+            type="button"
+            onClick={() => setChatOpen((open) => !open)}
+            aria-expanded={chatOpen}
+            className="rounded-md bg-sky-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-800"
+          >
+            OPSBot
+          </button>
           {user !== null && (
             <div className="text-right">
               <p className="text-sm font-medium">{user.name}</p>
@@ -64,6 +75,7 @@ export const AppLayout = () => {
         <main className="flex-1 p-8">
           <Outlet />
         </main>
+        {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
       </div>
     </div>
   )

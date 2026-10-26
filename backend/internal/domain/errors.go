@@ -10,6 +10,7 @@ var (
 	ErrForbidden       = errors.New("forbidden")
 	ErrNotFound        = errors.New("not found")
 	ErrConflict        = errors.New("conflict")
+	ErrUnavailable     = errors.New("unavailable")
 )
 
 // FieldError describes a validation or conflict problem for a specific request
