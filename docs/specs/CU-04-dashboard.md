@@ -16,7 +16,7 @@ Se construye por etapas: cada módulo nuevo agrega su sección sin romper las an
 - **Tarjetas de inventario**: total de servidores, por entorno (prod/staging/dev) y por ubicación (on-premise/cloud).
 - **Tarjetas de documentación**: total de documentos, por categoría, actualizados en los últimos 7 días.
 - **Últimos documentos editados** (5): título, autor, fecha → click abre el documento.
-- **Servidores sin documentación vinculada**: lista corta, sirve para detectar huecos.
+- *(Pendiente: requiere los vínculos documento ↔ servidor de CU-05)* **Servidores sin documentación vinculada**.
 - **Gráfico**: documentos por categoría (barras, Recharts).
 
 ### Etapa 2 (al sumar CU-03 y CU-10)
@@ -37,13 +37,13 @@ Se construye por etapas: cada módulo nuevo agrega su sección sin romper las an
 | Método | Ruta | Rol mínimo | Notas |
 |---|---|---|---|
 | GET | /api/dashboard/summary | soporte | contadores y listas cortas; campos opcionales por módulo |
-| GET | /api/dashboard/timeseries | soporte | etapa 2: `window=24h`, buckets de 15 min |
+| — | *(incluido en summary)* | — | la serie de 24 h en buckets de 15 min viaja en `availability.series` del mismo endpoint (RN-1) |
 
 ## UI
 - Grilla responsive: tarjetas arriba, listas y gráficos abajo.
 - Refresco automático cada 30 s (`refetchInterval`) sin recargar la página.
 - Colores de estado consistentes (ver frontend/AGENTS.md).
-- Modo claro/oscuro.
+- *(Pendiente)* Modo claro/oscuro.
 
 ## Criterios de aceptación
 - [ ] CA-1 Los números coinciden con una consulta directa a la base.

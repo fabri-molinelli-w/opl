@@ -25,8 +25,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 | ✅ | CU-02 | Inventario: primero servidores, después servicios |
 | ✅ | CU-05 | Documentación: ABM + búsqueda + categorías y etiquetas |
 | ✅ | CU-05 | Documentación: historial de versiones + bloqueo optimista (vínculos con el inventario → Extras) |
-| ⬜ | CU-04 | Dashboard etapa 1 (inventario + documentación) |
-| 🟨 | — | Datos semilla ficticios para la demo (inventario + documentos listos) |
+| ✅ | CU-04 | Dashboard etapa 1 (inventario + documentación) |
+| ✅ | — | Datos semilla ficticios para la demo (inventario, laboratorio y documentos) |
 
 ## Fase 2 — Operación
 
@@ -35,7 +35,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 | ✅ | — | Laboratorio en docker-compose (`lab-nginx`; api-demo y https quedan para CU-06/07) |
 | ✅ | CU-03 | Health checks + apertura automática de incidentes |
 | ✅ | CU-10 | Gestión de incidentes (sin deploys relacionados ni post-mortem) |
-| ⬜ | CU-04 | Dashboard etapa 2 (estado de servicios, incidentes, gráficos 24 h) |
+| ✅ | CU-04 | Dashboard etapa 2 (estado de servicios, incidentes, gráficos 24 h) |
 | ⬜ | CU-08 | Notificaciones internas (campana) |
 
 ## Fase 3 — OPLBot

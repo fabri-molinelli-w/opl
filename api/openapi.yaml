@@ -18,6 +18,7 @@ tags:
   - name: chat
   - name: monitoring
   - name: incidents
+  - name: dashboard
 
 paths:
   /api/health:
@@ -908,6 +909,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/dashboard/summary:
+    get:
+      tags: [dashboard]
+      operationId: getDashboardSummary
+      summary: Resumen agregado para la pantalla de inicio (un solo request)
+      x-min-role: soporte
+      responses:
+        "200":
+          description: Resumen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
@@ -1702,6 +1721,126 @@ components:
           type: integer
         pageSize:
           type: integer
+
+    DashboardSummary:
+      type: object
+      required: [generatedAt, servers, services, documents, incidents, availability]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        servers: { $ref: "#/components/schemas/DashboardServers" }
+        services: { $ref: "#/components/schemas/DashboardServices" }
+        documents: { $ref: "#/components/schemas/DashboardDocuments" }
+        incidents: { $ref: "#/components/schemas/DashboardIncidents" }
+        availability: { $ref: "#/components/schemas/DashboardAvailability" }
+
+    DashboardServers:
+      type: object
+      required: [total, prod, staging, dev, onprem, cloud]
+      properties:
+        total: { type: integer }
+        prod: { type: integer }
+        staging: { type: integer }
+        dev: { type: integer }
+        onprem: { type: integer }
+        cloud: { type: integer }
+
+    DashboardServices:
+      type: object
+      required: [total, up, down, degraded, unknown, problems]
+      properties:
+        total: { type: integer }
+        up: { type: integer }
+        down: { type: integer }
+        degraded: { type: integer }
+        unknown: { type: integer }
+        problems:
+          type: array
+          items: { $ref: "#/components/schemas/DashboardProblemService" }
+
+    DashboardProblemService:
+      type: object
+      required: [id, name, status, serverId, hostname]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { $ref: "#/components/schemas/ServiceStatus" }
+        serverId: { type: string }
+        hostname: { type: string }
+
+    DashboardDocuments:
+      type: object
+      required: [total, updatedLast7Days, byCategory, recent]
+      properties:
+        total: { type: integer }
+        updatedLast7Days: { type: integer }
+        byCategory:
+          type: array
+          items: { $ref: "#/components/schemas/DashboardCategoryCount" }
+        recent:
+          type: array
+          items: { $ref: "#/components/schemas/DashboardRecentDocument" }
+
+    DashboardCategoryCount:
+      type: object
+      required: [category, count]
+      properties:
+        category: { $ref: "#/components/schemas/DocumentCategory" }
+        count: { type: integer }
+
+    DashboardRecentDocument:
+      type: object
+      required: [id, title, updatedByName, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        updatedByName: { type: string }
+        updatedAt: { type: string, format: date-time }
+
+    DashboardIncidents:
+      type: object
+      required: [active, sev1, sev2, sev3, sev4, recent]
+      properties:
+        active: { type: integer }
+        sev1: { type: integer }
+        sev2: { type: integer }
+        sev3: { type: integer }
+        sev4: { type: integer }
+        recent:
+          type: array
+          items: { $ref: "#/components/schemas/DashboardRecentIncident" }
+
+    DashboardRecentIncident:
+      type: object
+      required: [id, title, severity, status, serviceName, openedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        severity: { $ref: "#/components/schemas/Severity" }
+        status: { $ref: "#/components/schemas/IncidentStatus" }
+        serviceName: { type: string }
+        openedAt: { type: string, format: date-time }
+
+    DashboardAvailability:
+      type: object
+      required: [checks24h, series]
+      properties:
+        checks24h: { type: integer }
+        uptimePercent24h:
+          type: number
+          format: double
+          description: Chequeos UP o DEGRADED / total en 24 h × 100 (RN-4). Ausente si no hay chequeos.
+        series:
+          type: array
+          description: Buckets de 15 minutos de las últimas 24 h
+          items: { $ref: "#/components/schemas/DashboardBucket" }
+
+    DashboardBucket:
+      type: object
+      required: [start, uptimePercent, avgResponseMs]
+      properties:
+        start: { type: string, format: date-time }
+        uptimePercent: { type: number, format: double }
+        avgResponseMs: { type: number, format: double }
 
   responses:
     BadRequest:

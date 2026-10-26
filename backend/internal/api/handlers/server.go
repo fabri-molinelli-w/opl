@@ -59,6 +59,7 @@ type Deps struct {
 	Chat       ChatService
 	Monitoring MonitoringService
 	Incidents  IncidentService
+	Dashboard  DashboardService
 	Log        *slog.Logger
 }
 
@@ -74,6 +75,7 @@ type Server struct {
 	chat       ChatService
 	monitoring MonitoringService
 	incidents  IncidentService
+	dashboard  DashboardService
 	log        *slog.Logger
 }
 
@@ -88,6 +90,7 @@ func NewServer(deps Deps) *Server {
 		chat:       deps.Chat,
 		monitoring: deps.Monitoring,
 		incidents:  deps.Incidents,
+		dashboard:  deps.Dashboard,
 		log:        deps.Log,
 	}
 }
