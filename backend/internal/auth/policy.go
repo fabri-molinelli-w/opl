@@ -49,6 +49,8 @@ const (
 	OperationUpdateIncident     = "UpdateIncident"
 	OperationTransitionIncident = "TransitionIncident"
 	OperationAddIncidentNote    = "AddIncidentNote"
+
+	OperationGetDashboardSummary = "GetDashboardSummary"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -102,6 +104,8 @@ func NewPolicy() Policy {
 			OperationUpdateIncident:     domain.RoleSoporte,
 			OperationTransitionIncident: domain.RoleSoporte,
 			OperationAddIncidentNote:    domain.RoleSoporte,
+
+			OperationGetDashboardSummary: domain.RoleSoporte,
 		},
 	}
 }

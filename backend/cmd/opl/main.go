@@ -101,6 +101,7 @@ func run(log *slog.Logger) error {
 		Chat:       chatService,
 		Monitoring: monitoringService,
 		Incidents:  incidentService,
+		Dashboard:  repository.NewDashboardRepository(queries),
 		Log:        log,
 	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)

@@ -1,5 +1,6 @@
 export * from './auth/auth.ts';
 export * from './chat/chat.ts';
+export * from './dashboard/dashboard.ts';
 export * from './documents/documents.ts';
 export * from './incidents/incidents.ts';
 export * from './monitoring/monitoring.ts';

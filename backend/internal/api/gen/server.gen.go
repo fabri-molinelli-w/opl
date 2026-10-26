@@ -437,6 +437,105 @@ type CreateUserRequest struct {
 	Role     Role                `json:"role"`
 }
 
+// DashboardAvailability defines model for DashboardAvailability.
+type DashboardAvailability struct {
+	Checks24h int `json:"checks24h"`
+
+	// Series Buckets de 15 minutos de las últimas 24 h
+	Series []DashboardBucket `json:"series"`
+
+	// UptimePercent24h Chequeos UP o DEGRADED / total en 24 h × 100 (RN-4). Ausente si no hay chequeos.
+	UptimePercent24h *float64 `json:"uptimePercent24h,omitempty"`
+}
+
+// DashboardBucket defines model for DashboardBucket.
+type DashboardBucket struct {
+	AvgResponseMs float64   `json:"avgResponseMs"`
+	Start         time.Time `json:"start"`
+	UptimePercent float64   `json:"uptimePercent"`
+}
+
+// DashboardCategoryCount defines model for DashboardCategoryCount.
+type DashboardCategoryCount struct {
+	Category DocumentCategory `json:"category"`
+	Count    int              `json:"count"`
+}
+
+// DashboardDocuments defines model for DashboardDocuments.
+type DashboardDocuments struct {
+	ByCategory       []DashboardCategoryCount  `json:"byCategory"`
+	Recent           []DashboardRecentDocument `json:"recent"`
+	Total            int                       `json:"total"`
+	UpdatedLast7Days int                       `json:"updatedLast7Days"`
+}
+
+// DashboardIncidents defines model for DashboardIncidents.
+type DashboardIncidents struct {
+	Active int                       `json:"active"`
+	Recent []DashboardRecentIncident `json:"recent"`
+	Sev1   int                       `json:"sev1"`
+	Sev2   int                       `json:"sev2"`
+	Sev3   int                       `json:"sev3"`
+	Sev4   int                       `json:"sev4"`
+}
+
+// DashboardProblemService defines model for DashboardProblemService.
+type DashboardProblemService struct {
+	Hostname string        `json:"hostname"`
+	Id       string        `json:"id"`
+	Name     string        `json:"name"`
+	ServerId string        `json:"serverId"`
+	Status   ServiceStatus `json:"status"`
+}
+
+// DashboardRecentDocument defines model for DashboardRecentDocument.
+type DashboardRecentDocument struct {
+	Id            string    `json:"id"`
+	Title         string    `json:"title"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	UpdatedByName string    `json:"updatedByName"`
+}
+
+// DashboardRecentIncident defines model for DashboardRecentIncident.
+type DashboardRecentIncident struct {
+	Id          string         `json:"id"`
+	OpenedAt    time.Time      `json:"openedAt"`
+	ServiceName string         `json:"serviceName"`
+	Severity    Severity       `json:"severity"`
+	Status      IncidentStatus `json:"status"`
+	Title       string         `json:"title"`
+}
+
+// DashboardServers defines model for DashboardServers.
+type DashboardServers struct {
+	Cloud   int `json:"cloud"`
+	Dev     int `json:"dev"`
+	Onprem  int `json:"onprem"`
+	Prod    int `json:"prod"`
+	Staging int `json:"staging"`
+	Total   int `json:"total"`
+}
+
+// DashboardServices defines model for DashboardServices.
+type DashboardServices struct {
+	Degraded int                       `json:"degraded"`
+	Down     int                       `json:"down"`
+	Problems []DashboardProblemService `json:"problems"`
+	Total    int                       `json:"total"`
+	Unknown  int                       `json:"unknown"`
+	Up       int                       `json:"up"`
+}
+
+// DashboardSummary defines model for DashboardSummary.
+type DashboardSummary struct {
+	Availability DashboardAvailability `json:"availability"`
+	Documents    DashboardDocuments    `json:"documents"`
+	GeneratedAt  time.Time             `json:"generatedAt"`
+	Incidents    DashboardIncidents    `json:"incidents"`
+	Servers      DashboardServers      `json:"servers"`
+	Services     DashboardServices     `json:"services"`
+}
+
 // Document defines model for Document.
 type Document struct {
 	Category DocumentCategory `json:"category"`
@@ -903,6 +1002,9 @@ type ServerInterface interface {
 	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 	// (POST /api/chat)
 	ChatWithOpsbot(w http.ResponseWriter, r *http.Request)
+	// GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
+	// (GET /api/dashboard/summary)
+	GetDashboardSummary(w http.ResponseWriter, r *http.Request)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams)
@@ -1020,6 +1122,12 @@ func (_ Unimplemented) ChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 // ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 // (POST /api/chat)
 func (_ Unimplemented) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
+// (GET /api/dashboard/summary)
+func (_ Unimplemented) GetDashboardSummary(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1259,6 +1367,20 @@ func (siw *ServerInterfaceWrapper) ChatWithOpsbot(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChatWithOpsbot(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDashboardSummary operation middleware
+func (siw *ServerInterfaceWrapper) GetDashboardSummary(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDashboardSummary(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2493,6 +2615,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/incidents/{id}/events", wrapper.AddIncidentNote)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/dashboard/summary", wrapper.GetDashboardSummary)
+	})
 
 	return r
 }
@@ -2714,6 +2839,55 @@ func (response ChatWithOpsbot503JSONResponse) VisitChatWithOpsbotResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboardSummaryRequestObject struct {
+}
+
+type GetDashboardSummaryResponseObject interface {
+	VisitGetDashboardSummaryResponse(w http.ResponseWriter) error
+}
+
+type GetDashboardSummary200JSONResponse DashboardSummary
+
+func (response GetDashboardSummary200JSONResponse) VisitGetDashboardSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboardSummary401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDashboardSummary401JSONResponse) VisitGetDashboardSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDashboardSummary403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetDashboardSummary403JSONResponse) VisitGetDashboardSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -4780,6 +4954,9 @@ type StrictServerInterface interface {
 	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 	// (POST /api/chat)
 	ChatWithOpsbot(ctx context.Context, request ChatWithOpsbotRequestObject) (ChatWithOpsbotResponseObject, error)
+	// GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
+	// (GET /api/dashboard/summary)
+	GetDashboardSummary(ctx context.Context, request GetDashboardSummaryRequestObject) (GetDashboardSummaryResponseObject, error)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(ctx context.Context, request ListDocumentsRequestObject) (ListDocumentsResponseObject, error)
@@ -5021,6 +5198,30 @@ func (sh *strictHandler) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChatWithOpsbotResponseObject); ok {
 		if err := validResponse.VisitChatWithOpsbotResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDashboardSummary operation middleware
+func (sh *strictHandler) GetDashboardSummary(w http.ResponseWriter, r *http.Request) {
+	var request GetDashboardSummaryRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDashboardSummary(ctx, request.(GetDashboardSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDashboardSummary")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDashboardSummaryResponseObject); ok {
+		if err := validResponse.VisitGetDashboardSummaryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
