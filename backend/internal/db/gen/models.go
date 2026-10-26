@@ -5,8 +5,41 @@
 package gen
 
 import (
+	"net/netip"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Server struct {
+	ID          pgtype.UUID
+	Hostname    string
+	Ip          netip.Addr
+	Environment string
+	Os          string
+	Location    string
+	Owner       string
+	Tags        []string
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+	DeletedAt   pgtype.Timestamptz
+}
+
+type Service struct {
+	ID                 pgtype.UUID
+	ServerID           pgtype.UUID
+	Name               string
+	Type               string
+	Port               int32
+	CheckType          string
+	CheckTarget        string
+	ExpectedStatus     int32
+	IntervalSeconds    int32
+	LatencyThresholdMs int32
+	CurrentStatus      string
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+	DeletedAt          pgtype.Timestamptz
+}
 
 type User struct {
 	ID           pgtype.UUID

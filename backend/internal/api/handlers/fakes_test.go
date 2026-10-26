@@ -53,6 +53,66 @@ func (f fakeUserService) Update(context.Context, string, domain.UserUpdate, doma
 	return f.updated, f.updateErr
 }
 
+type fakeServerService struct {
+	page      domain.ServerPage
+	server    domain.Server
+	listErr   error
+	getErr    error
+	createErr error
+	updateErr error
+	deleteErr error
+}
+
+func (f fakeServerService) List(_ context.Context, filter domain.ServerFilter) (domain.ServerPage, error) {
+	return f.page, f.listErr
+}
+
+func (f fakeServerService) Get(context.Context, string) (domain.Server, error) {
+	return f.server, f.getErr
+}
+
+func (f fakeServerService) Create(context.Context, service.CreateServerInput) (domain.Server, error) {
+	return f.server, f.createErr
+}
+
+func (f fakeServerService) Update(context.Context, string, domain.ServerUpdate) (domain.Server, error) {
+	return f.server, f.updateErr
+}
+
+func (f fakeServerService) Delete(context.Context, string) error {
+	return f.deleteErr
+}
+
+type fakeServiceCatalog struct {
+	page      domain.ServicePage
+	service   domain.Service
+	listErr   error
+	getErr    error
+	createErr error
+	updateErr error
+	deleteErr error
+}
+
+func (f fakeServiceCatalog) List(context.Context, domain.ServiceFilter) (domain.ServicePage, error) {
+	return f.page, f.listErr
+}
+
+func (f fakeServiceCatalog) Get(context.Context, string) (domain.Service, error) {
+	return f.service, f.getErr
+}
+
+func (f fakeServiceCatalog) Create(context.Context, service.CreateServiceInput) (domain.Service, error) {
+	return f.service, f.createErr
+}
+
+func (f fakeServiceCatalog) Update(context.Context, string, domain.ServiceUpdate) (domain.Service, error) {
+	return f.service, f.updateErr
+}
+
+func (f fakeServiceCatalog) Delete(context.Context, string) error {
+	return f.deleteErr
+}
+
 type fakeLookup struct {
 	users map[string]domain.User
 }
@@ -69,7 +129,14 @@ func newAuthorizedRouter(t *testing.T, authSvc AuthService, userSvc UserService,
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	server := NewServer(fakePinger{}, authSvc, userSvc, log)
+	server := NewServer(Deps{
+		DB:       fakePinger{},
+		Auth:     authSvc,
+		Users:    userSvc,
+		Servers:  fakeServerService{},
+		Services: fakeServiceCatalog{},
+		Log:      log,
+	})
 	middleware := auth.Authorize(policy, tokens, lookup)
 	strict := gen.NewStrictHandlerWithOptions(
 		server,

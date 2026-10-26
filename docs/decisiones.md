@@ -73,3 +73,28 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Fecha:** 2026-10-18
 - **Decisión:** el frontend guarda el JWT y el usuario en `sessionStorage`. El cliente HTTP (`src/api/http.ts`) adjunta el token y, ante un 401 con token presente, limpia la sesión y redirige a `/login`. Al recargar la app, `AuthContext` revalida la sesión con `GET /api/auth/me`.
 - **Motivo:** la sesión vive por pestaña y no persiste más de lo necesario (a diferencia de `localStorage`); la revalidación contra el backend hace que un usuario desactivado pierda el acceso sin esperar a que expire el token.
+
+## ADR-015 · Inventario con integridad estructural en PostgreSQL
+- **Fecha:** 2026-10-25
+- **Decisión:** `servers.ip` se guarda como `inet`. Las lecturas usan `host(ip)` y las escrituras `$n::inet`; el dominio Go usa `string` y valida con `netip.ParseAddr`. El `hostname` es único sin distinguir mayúsculas mediante el índice parcial `UNIQUE (lower(hostname)) WHERE deleted_at IS NULL`. Los `tags` son `text[]` con índice GIN y se filtran con el operador de contención (`@>`).
+- **Motivo:** la base garantiza integridad y unicidad aunque falle una validación de aplicación, sin agregar tablas auxiliares. El índice GIN mantiene eficientes los filtros combinados por etiqueta.
+
+## ADR-016 · Baja lógica en cascada dentro de una transacción
+- **Fecha:** 2026-10-25
+- **Decisión:** la baja de un servidor ejecuta `SoftDeleteServer` y `SoftDeleteServicesByServer` en una única transacción `pgx.Tx`; si el servidor no existe, se hace rollback y se devuelve 404. Todas las lecturas filtran `deleted_at IS NULL`, y los listados de servicios excluyen además los servicios cuyo servidor fue dado de baja.
+- **Motivo:** cumple RN-6 de forma atómica y evita servicios huérfanos visibles o bajas parciales ante un error.
+
+## ADR-017 · Tests de integración opt-in contra PostgreSQL real
+- **Fecha:** 2026-10-25
+- **Decisión:** los tests que dependen de PostgreSQL usan el build tag `integration`, leen `TEST_DATABASE_URL` y se ejecutan con `make test-integration`, que crea la base `opl_test` si no existe. Quedan fuera del CI y del `go test ./...` habitual.
+- **Motivo:** validar índices, `inet`, arrays/GIN, unicidad case-insensitive y transacciones que los fakes no pueden cubrir, sin exigir una base de datos en cada corrida local ni en CI.
+
+## ADR-018 · Errores de dominio con detalles por campo
+- **Fecha:** 2026-10-25
+- **Decisión:** `domain.Error` incluye `Details []FieldError` (`field`, `issue`). Los services construyen esos detalles y el mapeo centralizado de handlers los serializa en el schema `Error.details` del contrato.
+- **Motivo:** el frontend muestra la validación junto al campo sin interpretar mensajes libres, y se mantiene un único lugar de traducción dominio→HTTP.
+
+## ADR-019 · Datos semilla como comando idempotente separado
+- **Fecha:** 2026-10-25
+- **Decisión:** los datos de demo viven en `backend/cmd/seed` y se ejecutan manualmente con `make seed`. El comando hace UPSERT de servidores por hostname y crea cada servicio solo si no existe. No se ejecuta en migraciones ni al arrancar el backend.
+- **Motivo:** migraciones deterministas y ausencia de datos ficticios en producción, con una semilla reproducible para la demo que puede correrse varias veces sin duplicados.

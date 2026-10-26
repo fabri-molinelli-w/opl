@@ -45,6 +45,16 @@ func TestProtectedEndpoints_AuthMatrix(t *testing.T) {
 		{auth.OperationListUsers, http.MethodGet, "/api/users", ""},
 		{auth.OperationCreateUser, http.MethodPost, "/api/users", `{}`},
 		{auth.OperationUpdateUser, http.MethodPatch, "/api/users/" + soporte.ID, `{}`},
+		{auth.OperationListServers, http.MethodGet, "/api/servers", ""},
+		{auth.OperationCreateServer, http.MethodPost, "/api/servers", `{}`},
+		{auth.OperationGetServer, http.MethodGet, "/api/servers/00000000-0000-0000-0000-000000000001", ""},
+		{auth.OperationUpdateServer, http.MethodPatch, "/api/servers/00000000-0000-0000-0000-000000000001", `{}`},
+		{auth.OperationDeleteServer, http.MethodDelete, "/api/servers/00000000-0000-0000-0000-000000000001", ""},
+		{auth.OperationListServices, http.MethodGet, "/api/services", ""},
+		{auth.OperationCreateService, http.MethodPost, "/api/services", `{}`},
+		{auth.OperationGetService, http.MethodGet, "/api/services/00000000-0000-0000-0000-000000000001", ""},
+		{auth.OperationUpdateService, http.MethodPatch, "/api/services/00000000-0000-0000-0000-000000000001", `{}`},
+		{auth.OperationDeleteService, http.MethodDelete, "/api/services/00000000-0000-0000-0000-000000000001", ""},
 	}
 
 	for _, ep := range endpoints {
@@ -73,9 +83,9 @@ func TestProtectedEndpoints_AuthMatrix(t *testing.T) {
 
 			router.ServeHTTP(w, req)
 
-			if minRole == domain.RoleAdmin {
+			if minRole == domain.RoleAdmin || minRole == domain.RoleSysadmin {
 				if w.Code != http.StatusForbidden {
-					t.Fatalf("expected 403 for soporte on admin operation, got %d (%s)", w.Code, w.Body.String())
+					t.Fatalf("expected 403 for soporte on %s operation, got %d (%s)", minRole, w.Code, w.Body.String())
 				}
 				return
 			}

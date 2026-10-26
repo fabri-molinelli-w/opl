@@ -7,6 +7,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { DocumentsPage } from '@/features/documents/DocumentsPage'
 import { InventoryPage } from '@/features/inventory/InventoryPage'
+import { ServerDetailPage } from '@/features/inventory/ServerDetailPage'
 import { UsersPage } from '@/features/users/UsersPage'
 
 export const router = createBrowserRouter([
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: 'documentacion', element: <DocumentsPage /> },
           { path: 'inventario', element: <InventoryPage /> },
+          { path: 'inventario/:id', element: <ServerDetailPage /> },
           { path: 'mi-cuenta', element: <AccountPage /> },
           {
             element: <RequireRole minRole="admin" />,
