@@ -45,7 +45,7 @@ func TestMonitoringOpensAutoIncidentAndLifecycle(t *testing.T) {
 	queries := dbgen.New(pool)
 	servers := service.NewServerService(repository.NewServerRepository(queries, pool), repository.NewServiceRepository(queries), discardLogger())
 	catalog := service.NewServiceCatalog(repository.NewServiceRepository(queries), repository.NewServerRepository(queries, pool), discardLogger())
-	srv, err := servers.Create(ctx, service.CreateServerInput{Hostname: "lab-01.lab.local", IP: "192.0.2.50", Environment: "dev"})
+	srv, err := servers.Create(ctx, service.CreateServerInput{Hostname: "lab-01.lab.local", IP: "192.0.2.50", Environment: "dev", OS: "debian-12"})
 	if err != nil {
 		t.Fatalf("create server: %v", err)
 	}

@@ -215,6 +215,28 @@ func (q *Queries) ListServers(ctx context.Context, arg ListServersParams) ([]Lis
 	return items, nil
 }
 
+const serverIPInUse = `-- name: ServerIPInUse :one
+SELECT EXISTS (
+    SELECT 1 FROM servers
+    WHERE ip = $1::inet AND deleted_at IS NULL
+      AND ($2::uuid IS NULL OR id <> $2::uuid)
+)
+`
+
+type ServerIPInUseParams struct {
+	Ip        netip.Addr
+	ExcludeID pgtype.UUID
+}
+
+// RN-1b (CU-02): la IP no se repite entre servidores no eliminados. Se valida en el service
+// (no con un índice) para no romper bases que ya tengan IPs duplicadas cargadas.
+func (q *Queries) ServerIPInUse(ctx context.Context, arg ServerIPInUseParams) (bool, error) {
+	row := q.db.QueryRow(ctx, serverIPInUse, arg.Ip, arg.ExcludeID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const softDeleteServer = `-- name: SoftDeleteServer :execrows
 UPDATE servers
 SET deleted_at = now(), updated_at = now()

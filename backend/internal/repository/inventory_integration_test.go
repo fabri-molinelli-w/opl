@@ -110,9 +110,18 @@ func TestInventoryFiltersPaginationAndSoftDelete(t *testing.T) {
 		}
 	})
 
+	t.Run("ip is unique among active servers", func(t *testing.T) {
+		_, err := servers.Create(ctx, service.CreateServerInput{
+			Hostname: "web-99.example.com", IP: "192.0.2.10", Environment: "prod", OS: "debian-12",
+		})
+		if fe := domain.FieldErrors(err); !errors.Is(err, domain.ErrConflict) || len(fe) != 1 || fe[0].Field != "ip" {
+			t.Fatalf("expected ip conflict, got %v", err)
+		}
+	})
+
 	t.Run("hostname uniqueness is case-insensitive", func(t *testing.T) {
 		_, err := servers.Create(ctx, service.CreateServerInput{
-			Hostname: "WEB-01.EXAMPLE.COM", IP: "192.0.2.12", Environment: "prod",
+			Hostname: "WEB-01.EXAMPLE.COM", IP: "192.0.2.12", Environment: "prod", OS: "debian-12",
 		})
 		if !errors.Is(err, domain.ErrConflict) {
 			t.Fatalf("expected ErrConflict, got %v", err)
@@ -181,7 +190,7 @@ func TestDeleteServiceIsSoft(t *testing.T) {
 	services := service.NewServiceCatalog(serviceRepo, serverRepo, discardLogger())
 
 	server, err := servers.Create(ctx, service.CreateServerInput{
-		Hostname: "queue-01.example.com", IP: "203.0.113.20", Environment: "staging",
+		Hostname: "queue-01.example.com", IP: "203.0.113.20", Environment: "staging", OS: "debian-12",
 	})
 	if err != nil {
 		t.Fatalf("create server: %v", err)

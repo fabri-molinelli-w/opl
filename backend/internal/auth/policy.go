@@ -56,6 +56,15 @@ const (
 	OperationCountMyUnreadNotifications = "CountMyUnreadNotifications"
 	OperationMarkMyNotificationRead     = "MarkMyNotificationRead"
 	OperationMarkAllMyNotificationsRead = "MarkAllMyNotificationsRead"
+
+	OperationListCertificates  = "ListCertificates"
+	OperationCreateCertificate = "CreateCertificate"
+	OperationDeleteCertificate = "DeleteCertificate"
+	OperationCheckCertificate  = "CheckCertificate"
+
+	OperationListDeploys          = "ListDeploys"
+	OperationCreateDeploy         = "CreateDeploy"
+	OperationReceiveDeployWebhook = "ReceiveDeployWebhook"
 )
 
 // Policy maps every operationId of the contract to the minimum role required
@@ -71,6 +80,8 @@ func NewPolicy() Policy {
 		public: map[string]bool{
 			OperationGetHealth: true,
 			OperationLogin:     true,
+			// CU-07: el pipeline se autentica con X-Deploy-Token (validado en el servicio), no con JWT.
+			OperationReceiveDeployWebhook: true,
 		},
 		minRole: map[string]domain.Role{
 			OperationGetCurrentUser: domain.RoleSoporte,
@@ -116,6 +127,14 @@ func NewPolicy() Policy {
 			OperationCountMyUnreadNotifications: domain.RoleSoporte,
 			OperationMarkMyNotificationRead:     domain.RoleSoporte,
 			OperationMarkAllMyNotificationsRead: domain.RoleSoporte,
+
+			OperationListCertificates:  domain.RoleSoporte,
+			OperationCreateCertificate: domain.RoleSysadmin,
+			OperationDeleteCertificate: domain.RoleSysadmin,
+			OperationCheckCertificate:  domain.RoleSysadmin,
+
+			OperationListDeploys:  domain.RoleSoporte,
+			OperationCreateDeploy: domain.RoleSysadmin,
 		},
 	}
 }

@@ -41,13 +41,13 @@ func TestGetHealth(t *testing.T) {
 			name:       "200 ok/up when db is up",
 			pinger:     fakePinger{err: nil},
 			wantStatus: http.StatusOK,
-			wantBody:   gen.Health{Status: gen.Ok, Database: gen.Up},
+			wantBody:   gen.Health{Status: gen.HealthStatusOk, Database: gen.Up},
 		},
 		{
 			name:       "503 degraded/down when db is down",
 			pinger:     fakePinger{err: errors.New("connection refused")},
 			wantStatus: http.StatusServiceUnavailable,
-			wantBody:   gen.Health{Status: gen.Degraded, Database: gen.Down},
+			wantBody:   gen.Health{Status: gen.HealthStatusDegraded, Database: gen.Down},
 		},
 	}
 

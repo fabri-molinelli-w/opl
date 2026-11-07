@@ -17,6 +17,30 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for CertificateStatus.
+const (
+	CertificateStatusCritical CertificateStatus = "critical"
+	CertificateStatusOk       CertificateStatus = "ok"
+	CertificateStatusUnknown  CertificateStatus = "unknown"
+	CertificateStatusWarning  CertificateStatus = "warning"
+)
+
+// Valid indicates whether the value is a known member of the CertificateStatus enum.
+func (e CertificateStatus) Valid() bool {
+	switch e {
+	case CertificateStatusCritical:
+		return true
+	case CertificateStatusOk:
+		return true
+	case CertificateStatusUnknown:
+		return true
+	case CertificateStatusWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ChatSourceType.
 const (
 	ChatSourceTypeDocument ChatSourceType = "document"
@@ -53,6 +77,45 @@ func (e CheckType) Valid() bool {
 	case Http:
 		return true
 	case Tcp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploySource.
+const (
+	Manual  DeploySource = "manual"
+	Webhook DeploySource = "webhook"
+)
+
+// Valid indicates whether the value is a known member of the DeploySource enum.
+func (e DeploySource) Valid() bool {
+	switch e {
+	case Manual:
+		return true
+	case Webhook:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeployResult.
+const (
+	Failed   DeployResult = "failed"
+	Rollback DeployResult = "rollback"
+	Success  DeployResult = "success"
+)
+
+// Valid indicates whether the value is a known member of the DeployResult enum.
+func (e DeployResult) Valid() bool {
+	switch e {
+	case Failed:
+		return true
+	case Rollback:
+		return true
+	case Success:
 		return true
 	default:
 		return false
@@ -145,16 +208,16 @@ func (e HealthDatabase) Valid() bool {
 
 // Defines values for HealthStatus.
 const (
-	Degraded HealthStatus = "degraded"
-	Ok       HealthStatus = "ok"
+	HealthStatusDegraded HealthStatus = "degraded"
+	HealthStatusOk       HealthStatus = "ok"
 )
 
 // Valid indicates whether the value is a known member of the HealthStatus enum.
 func (e HealthStatus) Valid() bool {
 	switch e {
-	case Degraded:
+	case HealthStatusDegraded:
 		return true
-	case Ok:
+	case HealthStatusOk:
 		return true
 	default:
 		return false
@@ -380,6 +443,25 @@ func (e SortOrder) Valid() bool {
 	}
 }
 
+// Certificate defines model for Certificate.
+type Certificate struct {
+	CreatedAt time.Time `json:"createdAt"`
+	DaysLeft  *int      `json:"daysLeft,omitempty"`
+	Domain    string    `json:"domain"`
+
+	// Error Motivo del último chequeo fallido (status unknown)
+	Error         *string           `json:"error,omitempty"`
+	Id            string            `json:"id"`
+	Issuer        string            `json:"issuer"`
+	LastCheckedAt *time.Time        `json:"lastCheckedAt,omitempty"`
+	NotAfter      *time.Time        `json:"notAfter,omitempty"`
+	Port          int               `json:"port"`
+	Status        CertificateStatus `json:"status"`
+}
+
+// CertificateStatus defines model for CertificateStatus.
+type CertificateStatus string
+
 // ChangePasswordRequest defines model for ChangePasswordRequest.
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword"`
@@ -411,6 +493,25 @@ type ChatSourceType string
 
 // CheckType defines model for CheckType.
 type CheckType string
+
+// CreateCertificateRequest defines model for CreateCertificateRequest.
+type CreateCertificateRequest struct {
+	// Domain Example: lab-tls.lab.local
+	Domain string `json:"domain"`
+	Port   *int   `json:"port,omitempty"`
+}
+
+// CreateDeployRequest defines model for CreateDeployRequest.
+type CreateDeployRequest struct {
+	Author     *string      `json:"author,omitempty"`
+	DeployedAt *time.Time   `json:"deployedAt,omitempty"`
+	Notes      *string      `json:"notes,omitempty"`
+	Result     DeployResult `json:"result"`
+	ServiceId  string       `json:"serviceId"`
+
+	// Version Example: v1.4.2
+	Version string `json:"version"`
+}
 
 // CreateDocumentRequest defines model for CreateDocumentRequest.
 type CreateDocumentRequest struct {
@@ -558,6 +659,45 @@ type DashboardSummary struct {
 	Incidents    DashboardIncidents    `json:"incidents"`
 	Servers      DashboardServers      `json:"servers"`
 	Services     DashboardServices     `json:"services"`
+}
+
+// Deploy defines model for Deploy.
+type Deploy struct {
+	Author      string       `json:"author"`
+	DeployedAt  time.Time    `json:"deployedAt"`
+	Environment Environment  `json:"environment"`
+	Id          string       `json:"id"`
+	Notes       string       `json:"notes"`
+	Result      DeployResult `json:"result"`
+	ServiceId   string       `json:"serviceId"`
+	ServiceName string       `json:"serviceName"`
+	Source      DeploySource `json:"source"`
+	Version     string       `json:"version"`
+}
+
+// DeploySource defines model for Deploy.Source.
+type DeploySource string
+
+// DeployCreated defines model for DeployCreated.
+type DeployCreated struct {
+	Id string `json:"id"`
+}
+
+// DeployResult defines model for DeployResult.
+type DeployResult string
+
+// DeployWebhookRequest defines model for DeployWebhookRequest.
+type DeployWebhookRequest struct {
+	Author      *string      `json:"author,omitempty"`
+	Environment Environment  `json:"environment"`
+	Notes       *string      `json:"notes,omitempty"`
+	Result      DeployResult `json:"result"`
+
+	// ServiceName Example: lab-nginx
+	ServiceName string `json:"serviceName"`
+
+	// Version Example: v1.4.2
+	Version string `json:"version"`
 }
 
 // Document defines model for Document.
@@ -938,6 +1078,24 @@ type Unauthorized = Error
 // Unavailable defines model for Unavailable.
 type Unavailable = Error
 
+// ListCertificatesParams defines parameters for ListCertificates.
+type ListCertificatesParams struct {
+	Status *CertificateStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// ListDeploysParams defines parameters for ListDeploys.
+type ListDeploysParams struct {
+	ServiceId   *string      `form:"serviceId,omitempty" json:"serviceId,omitempty"`
+	Environment *Environment `form:"environment,omitempty" json:"environment,omitempty"`
+	From        *time.Time   `form:"from,omitempty" json:"from,omitempty"`
+	To          *time.Time   `form:"to,omitempty" json:"to,omitempty"`
+}
+
+// ReceiveDeployWebhookParams defines parameters for ReceiveDeployWebhook.
+type ReceiveDeployWebhookParams struct {
+	XDeployToken string `json:"X-Deploy-Token"`
+}
+
 // ListDocumentsParams defines parameters for ListDocuments.
 type ListDocumentsParams struct {
 	Page     *Page     `form:"page,omitempty" json:"page,omitempty"`
@@ -999,8 +1157,17 @@ type LoginJSONRequestBody = LoginRequest
 // ChangeOwnPasswordJSONRequestBody defines body for ChangeOwnPassword for application/json ContentType.
 type ChangeOwnPasswordJSONRequestBody = ChangePasswordRequest
 
+// CreateCertificateJSONRequestBody defines body for CreateCertificate for application/json ContentType.
+type CreateCertificateJSONRequestBody = CreateCertificateRequest
+
 // ChatWithOpsbotJSONRequestBody defines body for ChatWithOpsbot for application/json ContentType.
 type ChatWithOpsbotJSONRequestBody = ChatRequest
+
+// CreateDeployJSONRequestBody defines body for CreateDeploy for application/json ContentType.
+type CreateDeployJSONRequestBody = CreateDeployRequest
+
+// ReceiveDeployWebhookJSONRequestBody defines body for ReceiveDeployWebhook for application/json ContentType.
+type ReceiveDeployWebhookJSONRequestBody = DeployWebhookRequest
 
 // CreateDocumentJSONRequestBody defines body for CreateDocument for application/json ContentType.
 type CreateDocumentJSONRequestBody = CreateDocumentRequest
@@ -1049,12 +1216,33 @@ type ServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(w http.ResponseWriter, r *http.Request)
+	// ListCertificates Certificados SSL vigilados, ordenados por días restantes (CU-06)
+	// (GET /api/certificates)
+	ListCertificates(w http.ResponseWriter, r *http.Request, params ListCertificatesParams)
+	// CreateCertificate Agrega un dominio a vigilar y lo chequea en el momento (CU-06)
+	// (POST /api/certificates)
+	CreateCertificate(w http.ResponseWriter, r *http.Request)
+	// DeleteCertificate Deja de vigilar un dominio (CU-06)
+	// (DELETE /api/certificates/{id})
+	DeleteCertificate(w http.ResponseWriter, r *http.Request, id ResourceId)
+	// CheckCertificate Vuelve a chequear el certificado ahora (CU-06)
+	// (POST /api/certificates/{id}/check)
+	CheckCertificate(w http.ResponseWriter, r *http.Request, id ResourceId)
 	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 	// (POST /api/chat)
 	ChatWithOpsbot(w http.ResponseWriter, r *http.Request)
 	// GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
 	// (GET /api/dashboard/summary)
 	GetDashboardSummary(w http.ResponseWriter, r *http.Request)
+	// ListDeploys Historial de deploys (últimos 100) con filtros (CU-07)
+	// (GET /api/deploys)
+	ListDeploys(w http.ResponseWriter, r *http.Request, params ListDeploysParams)
+	// CreateDeploy Registra un deploy manualmente (CU-07)
+	// (POST /api/deploys)
+	CreateDeploy(w http.ResponseWriter, r *http.Request)
+	// ReceiveDeployWebhook Webhook del pipeline de CI/CD (CU-07). Autenticado con X-Deploy-Token, no con JWT.
+	// (POST /api/deploys/webhook)
+	ReceiveDeployWebhook(w http.ResponseWriter, r *http.Request, params ReceiveDeployWebhookParams)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(w http.ResponseWriter, r *http.Request, params ListDocumentsParams)
@@ -1181,6 +1369,30 @@ func (_ Unimplemented) ChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListCertificates Certificados SSL vigilados, ordenados por días restantes (CU-06)
+// (GET /api/certificates)
+func (_ Unimplemented) ListCertificates(w http.ResponseWriter, r *http.Request, params ListCertificatesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateCertificate Agrega un dominio a vigilar y lo chequea en el momento (CU-06)
+// (POST /api/certificates)
+func (_ Unimplemented) CreateCertificate(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteCertificate Deja de vigilar un dominio (CU-06)
+// (DELETE /api/certificates/{id})
+func (_ Unimplemented) DeleteCertificate(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CheckCertificate Vuelve a chequear el certificado ahora (CU-06)
+// (POST /api/certificates/{id}/check)
+func (_ Unimplemented) CheckCertificate(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 // (POST /api/chat)
 func (_ Unimplemented) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
@@ -1190,6 +1402,24 @@ func (_ Unimplemented) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
 // GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
 // (GET /api/dashboard/summary)
 func (_ Unimplemented) GetDashboardSummary(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListDeploys Historial de deploys (últimos 100) con filtros (CU-07)
+// (GET /api/deploys)
+func (_ Unimplemented) ListDeploys(w http.ResponseWriter, r *http.Request, params ListDeploysParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDeploy Registra un deploy manualmente (CU-07)
+// (POST /api/deploys)
+func (_ Unimplemented) CreateDeploy(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReceiveDeployWebhook Webhook del pipeline de CI/CD (CU-07). Autenticado con X-Deploy-Token, no con JWT.
+// (POST /api/deploys/webhook)
+func (_ Unimplemented) ReceiveDeployWebhook(w http.ResponseWriter, r *http.Request, params ReceiveDeployWebhookParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1448,6 +1678,105 @@ func (siw *ServerInterfaceWrapper) ChangeOwnPassword(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListCertificates operation middleware
+func (siw *ServerInterfaceWrapper) ListCertificates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCertificatesParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCertificates(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCertificate operation middleware
+func (siw *ServerInterfaceWrapper) CreateCertificate(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCertificate(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCertificate operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCertificate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCertificate(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CheckCertificate operation middleware
+func (siw *ServerInterfaceWrapper) CheckCertificate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CheckCertificate(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ChatWithOpsbot operation middleware
 func (siw *ServerInterfaceWrapper) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
 
@@ -1467,6 +1796,137 @@ func (siw *ServerInterfaceWrapper) GetDashboardSummary(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDashboardSummary(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDeploys operation middleware
+func (siw *ServerInterfaceWrapper) ListDeploys(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListDeploysParams
+
+	// ------------- Optional query parameter "serviceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "serviceId", r.URL.Query(), &params.ServiceId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "serviceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serviceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "environment" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "environment", r.URL.Query(), &params.Environment, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "environment"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environment", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDeploys(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDeploy operation middleware
+func (siw *ServerInterfaceWrapper) CreateDeploy(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDeploy(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReceiveDeployWebhook operation middleware
+func (siw *ServerInterfaceWrapper) ReceiveDeployWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReceiveDeployWebhookParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-Deploy-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Deploy-Token")]; found {
+		var XDeployToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Deploy-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Deploy-Token", valueList[0], &XDeployToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Deploy-Token", Err: err})
+			return
+		}
+
+		params.XDeployToken = XDeployToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-Deploy-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Deploy-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReceiveDeployWebhook(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2803,6 +3263,27 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/me/notifications/read-all", wrapper.MarkAllMyNotificationsRead)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/certificates", wrapper.ListCertificates)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/certificates", wrapper.CreateCertificate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/api/certificates/{id}", wrapper.DeleteCertificate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/certificates/{id}/check", wrapper.CheckCertificate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/deploys", wrapper.ListDeploys)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/deploys", wrapper.CreateDeploy)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/deploys/webhook", wrapper.ReceiveDeployWebhook)
+	})
 
 	return r
 }
@@ -2950,6 +3431,242 @@ func (response ChangeOwnPassword401JSONResponse) VisitChangeOwnPasswordResponse(
 	return err
 }
 
+type ListCertificatesRequestObject struct {
+	Params ListCertificatesParams
+}
+
+type ListCertificatesResponseObject interface {
+	VisitListCertificatesResponse(w http.ResponseWriter) error
+}
+
+type ListCertificates200JSONResponse []Certificate
+
+func (response ListCertificates200JSONResponse) VisitListCertificatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCertificates401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCertificates401JSONResponse) VisitListCertificatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCertificateRequestObject struct {
+	Body *CreateCertificateJSONRequestBody
+}
+
+type CreateCertificateResponseObject interface {
+	VisitCreateCertificateResponse(w http.ResponseWriter) error
+}
+
+type CreateCertificate201JSONResponse Certificate
+
+func (response CreateCertificate201JSONResponse) VisitCreateCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCertificate400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCertificate400JSONResponse) VisitCreateCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCertificate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCertificate401JSONResponse) VisitCreateCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCertificate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateCertificate403JSONResponse) VisitCreateCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCertificate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCertificate409JSONResponse) VisitCreateCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCertificateRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type DeleteCertificateResponseObject interface {
+	VisitDeleteCertificateResponse(w http.ResponseWriter) error
+}
+
+type DeleteCertificate204Response struct {
+}
+
+func (response DeleteCertificate204Response) VisitDeleteCertificateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCertificate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCertificate401JSONResponse) VisitDeleteCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCertificate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteCertificate403JSONResponse) VisitDeleteCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCertificate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCertificate404JSONResponse) VisitDeleteCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckCertificateRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type CheckCertificateResponseObject interface {
+	VisitCheckCertificateResponse(w http.ResponseWriter) error
+}
+
+type CheckCertificate200JSONResponse Certificate
+
+func (response CheckCertificate200JSONResponse) VisitCheckCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckCertificate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CheckCertificate401JSONResponse) VisitCheckCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckCertificate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CheckCertificate403JSONResponse) VisitCheckCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckCertificate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CheckCertificate404JSONResponse) VisitCheckCertificateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ChatWithOpsbotRequestObject struct {
 	Body *ChatWithOpsbotJSONRequestBody
 }
@@ -3073,6 +3790,185 @@ func (response GetDashboardSummary403JSONResponse) VisitGetDashboardSummaryRespo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeploysRequestObject struct {
+	Params ListDeploysParams
+}
+
+type ListDeploysResponseObject interface {
+	VisitListDeploysResponse(w http.ResponseWriter) error
+}
+
+type ListDeploys200JSONResponse []Deploy
+
+func (response ListDeploys200JSONResponse) VisitListDeploysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeploys400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListDeploys400JSONResponse) VisitListDeploysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDeploys401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDeploys401JSONResponse) VisitListDeploysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeployRequestObject struct {
+	Body *CreateDeployJSONRequestBody
+}
+
+type CreateDeployResponseObject interface {
+	VisitCreateDeployResponse(w http.ResponseWriter) error
+}
+
+type CreateDeploy201JSONResponse DeployCreated
+
+func (response CreateDeploy201JSONResponse) VisitCreateDeployResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeploy400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDeploy400JSONResponse) VisitCreateDeployResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeploy401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDeploy401JSONResponse) VisitCreateDeployResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDeploy403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CreateDeploy403JSONResponse) VisitCreateDeployResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceiveDeployWebhookRequestObject struct {
+	Params ReceiveDeployWebhookParams
+	Body   *ReceiveDeployWebhookJSONRequestBody
+}
+
+type ReceiveDeployWebhookResponseObject interface {
+	VisitReceiveDeployWebhookResponse(w http.ResponseWriter) error
+}
+
+type ReceiveDeployWebhook201JSONResponse DeployCreated
+
+func (response ReceiveDeployWebhook201JSONResponse) VisitReceiveDeployWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceiveDeployWebhook400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ReceiveDeployWebhook400JSONResponse) VisitReceiveDeployWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceiveDeployWebhook401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ReceiveDeployWebhook401JSONResponse) VisitReceiveDeployWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceiveDeployWebhook404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ReceiveDeployWebhook404JSONResponse) VisitReceiveDeployWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -5280,12 +6176,33 @@ type StrictServerInterface interface {
 	// ChangeOwnPassword Cambia la contraseña del usuario autenticado
 	// (POST /api/auth/me/password)
 	ChangeOwnPassword(ctx context.Context, request ChangeOwnPasswordRequestObject) (ChangeOwnPasswordResponseObject, error)
+	// ListCertificates Certificados SSL vigilados, ordenados por días restantes (CU-06)
+	// (GET /api/certificates)
+	ListCertificates(ctx context.Context, request ListCertificatesRequestObject) (ListCertificatesResponseObject, error)
+	// CreateCertificate Agrega un dominio a vigilar y lo chequea en el momento (CU-06)
+	// (POST /api/certificates)
+	CreateCertificate(ctx context.Context, request CreateCertificateRequestObject) (CreateCertificateResponseObject, error)
+	// DeleteCertificate Deja de vigilar un dominio (CU-06)
+	// (DELETE /api/certificates/{id})
+	DeleteCertificate(ctx context.Context, request DeleteCertificateRequestObject) (DeleteCertificateResponseObject, error)
+	// CheckCertificate Vuelve a chequear el certificado ahora (CU-06)
+	// (POST /api/certificates/{id}/check)
+	CheckCertificate(ctx context.Context, request CheckCertificateRequestObject) (CheckCertificateResponseObject, error)
 	// ChatWithOpsbot Consulta a OPSBot (RAG sobre la documentación + estado del inventario, solo lectura)
 	// (POST /api/chat)
 	ChatWithOpsbot(ctx context.Context, request ChatWithOpsbotRequestObject) (ChatWithOpsbotResponseObject, error)
 	// GetDashboardSummary Resumen agregado para la pantalla de inicio (un solo request)
 	// (GET /api/dashboard/summary)
 	GetDashboardSummary(ctx context.Context, request GetDashboardSummaryRequestObject) (GetDashboardSummaryResponseObject, error)
+	// ListDeploys Historial de deploys (últimos 100) con filtros (CU-07)
+	// (GET /api/deploys)
+	ListDeploys(ctx context.Context, request ListDeploysRequestObject) (ListDeploysResponseObject, error)
+	// CreateDeploy Registra un deploy manualmente (CU-07)
+	// (POST /api/deploys)
+	CreateDeploy(ctx context.Context, request CreateDeployRequestObject) (CreateDeployResponseObject, error)
+	// ReceiveDeployWebhook Webhook del pipeline de CI/CD (CU-07). Autenticado con X-Deploy-Token, no con JWT.
+	// (POST /api/deploys/webhook)
+	ReceiveDeployWebhook(ctx context.Context, request ReceiveDeployWebhookRequestObject) (ReceiveDeployWebhookResponseObject, error)
 	// ListDocuments Lista y busca documentos
 	// (GET /api/documents)
 	ListDocuments(ctx context.Context, request ListDocumentsRequestObject) (ListDocumentsResponseObject, error)
@@ -5515,6 +6432,115 @@ func (sh *strictHandler) ChangeOwnPassword(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListCertificates operation middleware
+func (sh *strictHandler) ListCertificates(w http.ResponseWriter, r *http.Request, params ListCertificatesParams) {
+	var request ListCertificatesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCertificates(ctx, request.(ListCertificatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCertificates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCertificatesResponseObject); ok {
+		if err := validResponse.VisitListCertificatesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCertificate operation middleware
+func (sh *strictHandler) CreateCertificate(w http.ResponseWriter, r *http.Request) {
+	var request CreateCertificateRequestObject
+
+	var body CreateCertificateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCertificate(ctx, request.(CreateCertificateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCertificate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCertificateResponseObject); ok {
+		if err := validResponse.VisitCreateCertificateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCertificate operation middleware
+func (sh *strictHandler) DeleteCertificate(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request DeleteCertificateRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCertificate(ctx, request.(DeleteCertificateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCertificate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCertificateResponseObject); ok {
+		if err := validResponse.VisitDeleteCertificateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CheckCertificate operation middleware
+func (sh *strictHandler) CheckCertificate(w http.ResponseWriter, r *http.Request, id ResourceId) {
+	var request CheckCertificateRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CheckCertificate(ctx, request.(CheckCertificateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CheckCertificate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CheckCertificateResponseObject); ok {
+		if err := validResponse.VisitCheckCertificateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ChatWithOpsbot operation middleware
 func (sh *strictHandler) ChatWithOpsbot(w http.ResponseWriter, r *http.Request) {
 	var request ChatWithOpsbotRequestObject
@@ -5563,6 +6589,96 @@ func (sh *strictHandler) GetDashboardSummary(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetDashboardSummaryResponseObject); ok {
 		if err := validResponse.VisitGetDashboardSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDeploys operation middleware
+func (sh *strictHandler) ListDeploys(w http.ResponseWriter, r *http.Request, params ListDeploysParams) {
+	var request ListDeploysRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDeploys(ctx, request.(ListDeploysRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDeploys")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDeploysResponseObject); ok {
+		if err := validResponse.VisitListDeploysResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDeploy operation middleware
+func (sh *strictHandler) CreateDeploy(w http.ResponseWriter, r *http.Request) {
+	var request CreateDeployRequestObject
+
+	var body CreateDeployJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDeploy(ctx, request.(CreateDeployRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDeploy")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDeployResponseObject); ok {
+		if err := validResponse.VisitCreateDeployResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReceiveDeployWebhook operation middleware
+func (sh *strictHandler) ReceiveDeployWebhook(w http.ResponseWriter, r *http.Request, params ReceiveDeployWebhookParams) {
+	var request ReceiveDeployWebhookRequestObject
+
+	request.Params = params
+
+	var body ReceiveDeployWebhookJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReceiveDeployWebhook(ctx, request.(ReceiveDeployWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReceiveDeployWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReceiveDeployWebhookResponseObject); ok {
+		if err := validResponse.VisitReceiveDeployWebhookResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

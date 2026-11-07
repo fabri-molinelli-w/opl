@@ -50,3 +50,9 @@ class BackendClient:
 
     async def list_incidents(self, params: dict[str, str | int]) -> JSON:
         return cast(JSON, await self._get("/api/incidents", params))
+
+    async def list_certificates(self) -> list[JSON]:
+        return cast(list[JSON], await self._get("/api/certificates"))
+
+    async def list_deploys(self, params: dict[str, str | int]) -> list[JSON]:
+        return cast(list[JSON], await self._get("/api/deploys", params))

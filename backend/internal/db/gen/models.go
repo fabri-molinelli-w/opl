@@ -10,6 +10,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Certificate struct {
+	ID            pgtype.UUID
+	Domain        string
+	Port          int32
+	Issuer        string
+	NotAfter      pgtype.Timestamptz
+	DaysLeft      pgtype.Int4
+	Status        string
+	Error         pgtype.Text
+	LastCheckedAt pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type Deploy struct {
+	ID          pgtype.UUID
+	ServiceID   pgtype.UUID
+	Version     string
+	Environment string
+	Author      string
+	Result      string
+	Notes       string
+	Source      string
+	DeployedAt  pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+}
+
 type Document struct {
 	ID        pgtype.UUID
 	Title     string
