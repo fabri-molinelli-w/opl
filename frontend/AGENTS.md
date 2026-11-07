@@ -16,7 +16,7 @@ frontend/src/
 │       ├── ServersPage.tsx
 │       ├── ServerForm.tsx
 │       └── servers.test.tsx
-├── layouts/            AppLayout con sidebar + panel lateral de OPLBot
+├── layouts/            AppLayout con sidebar + panel lateral de OPSBot
 ├── routes.tsx
 └── main.tsx
 ```

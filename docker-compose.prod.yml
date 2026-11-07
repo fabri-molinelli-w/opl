@@ -1,0 +1,53 @@
+name: opl
+
+# Producción (Fase 5, Debian): sin laboratorios, sin puertos de base expuestos.
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# HTTPS lo termina el reverse proxy del host (ver docs/instalacion-debian.md), que apunta a 127.0.0.1:8088.
+services:
+  postgres:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      HTTP_PORT: "8080"
+      AI_SERVICE_URL: http://ai-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai-service:
+    build: ./ai-service
+    restart: always
+    env_file: .env
+    environment:
+      BACKEND_URL: http://backend:8080
+    volumes:
+      - aidata:/data
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "127.0.0.1:8088:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  aidata:

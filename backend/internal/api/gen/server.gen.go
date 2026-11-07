@@ -310,15 +310,18 @@ func (e Location) Valid() bool {
 
 // Defines values for NotificationEventType.
 const (
-	DocumentUpdated  NotificationEventType = "document.updated"
-	IncidentAssigned NotificationEventType = "incident.assigned"
-	IncidentOpened   NotificationEventType = "incident.opened"
-	ServiceDown      NotificationEventType = "service.down"
+	CertificateCritical NotificationEventType = "certificate.critical"
+	DocumentUpdated     NotificationEventType = "document.updated"
+	IncidentAssigned    NotificationEventType = "incident.assigned"
+	IncidentOpened      NotificationEventType = "incident.opened"
+	ServiceDown         NotificationEventType = "service.down"
 )
 
 // Valid indicates whether the value is a known member of the NotificationEventType enum.
 func (e NotificationEventType) Valid() bool {
 	switch e {
+	case CertificateCritical:
+		return true
 	case DocumentUpdated:
 		return true
 	case IncidentAssigned:

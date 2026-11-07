@@ -15,7 +15,7 @@
                     └───┬──────────────┬───┘
                         │              │ X-Internal-Token + JWT del usuario
               ┌─────────▼──┐   ┌───────▼────────────┐
-              │ PostgreSQL │   │ ai-service (OPLBot)│  red interna, sin puerto público
+              │ PostgreSQL │   │ ai-service (OPSBot)│  red interna, sin puerto público
               └────────────┘   │ FastAPI+LangChain  │
                                │ ChromaDB local     │
                                └───────┬────────────┘
@@ -31,7 +31,7 @@
 
 ### frontend
 SPA en React + TypeScript. Solo habla con el backend. El cliente HTTP y los tipos se generan desde
-`api/openapi.yaml` con Orval. OPLBot aparece como panel lateral en todas las pantallas.
+`api/openapi.yaml` con Orval. OPSBot aparece como panel lateral en todas las pantallas.
 
 ### backend (Go)
 - **handlers**: implementan la interfaz generada por oapi-codegen (modo strict). Validan y traducen errores.
@@ -41,13 +41,13 @@ SPA en React + TypeScript. Solo habla con el backend. El cliente HTTP y los tipo
 - **notify**: genera notificaciones internas (tabla `notifications`) con ventana anti-duplicados; el frontend las consulta.
 - **aiclient**: reenvía consultas de chat y avisa cambios de documentos al ai-service.
 
-### ai-service (OPLBot)
+### ai-service (OPSBot)
 - `/ingest`: chunking por encabezados Markdown → embeddings locales → ChromaDB.
 - `/chat`: agente LangChain con tools de solo lectura que llaman a endpoints GET del backend **con el JWT del usuario**, por lo que heredan sus permisos.
 
 ### lab
 Contenedores objetivo para la demo: un Nginx, una API de ejemplo y un endpoint HTTPS con certificado autofirmado
-próximo a vencer. Permiten mostrar el ciclo caída → DOWN → incidente → alerta → OPLBot → resolución → post-mortem.
+próximo a vencer. Permiten mostrar el ciclo caída → DOWN → incidente → alerta → OPSBot → resolución → post-mortem.
 
 ## Seguridad entre servicios
 - El frontend nunca habla con ai-service.

@@ -91,6 +91,7 @@ func run(log *slog.Logger) error {
 	incidentService.AddObserver(notificationService)
 	documentService.AddObserver(notificationService)
 	releaseService := service.NewReleaseService(repository.NewReleaseRepository(queries), service.ReadTLSCertificate, cfg.DeployWebhookToken, log)
+	releaseService.AddObserver(notificationService)
 	if cfg.DeployWebhookToken == "" {
 		log.Warn("deploy webhook disabled: DEPLOY_WEBHOOK_TOKEN not set")
 	}

@@ -2081,7 +2081,7 @@ components:
 
     NotificationEventType:
       type: string
-      enum: [service.down, incident.opened, incident.assigned, document.updated]
+      enum: [service.down, incident.opened, incident.assigned, document.updated, certificate.critical]
 
     Notification:
       type: object

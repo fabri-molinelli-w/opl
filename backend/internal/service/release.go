@@ -68,8 +68,14 @@ var domainPattern = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9.-]{0,251}[a-zA-Z
 
 var validResults = map[string]bool{"success": true, "failed": true, "rollback": true}
 
+// CertificateObserver is notified when a certificate becomes critical (CU-06 RN-5).
+type CertificateObserver interface {
+	OnCertificateCritical(ctx context.Context, cert domain.Certificate)
+}
+
 // ReleaseService implements CU-06 and CU-07.
 type ReleaseService struct {
+	observers    []CertificateObserver
 	repo         ReleaseRepository
 	read         CertificateReader
 	webhookToken string
@@ -80,6 +86,9 @@ type ReleaseService struct {
 func NewReleaseService(repo ReleaseRepository, read CertificateReader, webhookToken string, log *slog.Logger) *ReleaseService {
 	return &ReleaseService{repo: repo, read: read, webhookToken: webhookToken, now: time.Now, log: log}
 }
+
+// AddObserver registers an observer of critical certificates.
+func (s *ReleaseService) AddObserver(o CertificateObserver) { s.observers = append(s.observers, o) }
 
 // --- CU-06 ---
 
@@ -132,7 +141,16 @@ func (s *ReleaseService) CheckCertificate(ctx context.Context, id string) (domai
 	if err := s.repo.SaveCertificateCheck(ctx, id, result); err != nil {
 		return domain.Certificate{}, err
 	}
-	return s.repo.GetCertificate(ctx, id)
+	updated, err := s.repo.GetCertificate(ctx, id)
+	if err != nil {
+		return domain.Certificate{}, err
+	}
+	if updated.Status == domain.CertCritical && cert.Status != domain.CertCritical {
+		for _, o := range s.observers {
+			o.OnCertificateCritical(ctx, updated)
+		}
+	}
+	return updated, nil
 }
 
 func (s *ReleaseService) DeleteCertificate(ctx context.Context, id string) error {

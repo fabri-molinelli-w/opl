@@ -8,6 +8,7 @@ const (
 	EventIncidentOpened   = "incident.opened"
 	EventIncidentAssigned = "incident.assigned"
 	EventDocumentUpdated  = "document.updated"
+	EventCertCritical     = "certificate.critical"
 )
 
 // Notification is an in-app notification of a single user.

@@ -73,12 +73,17 @@ func TestCreateCertificateChecksImmediately(t *testing.T) {
 	}
 	svc := NewReleaseService(repo, read, "", discardLogger())
 	svc.now = func() time.Time { return now }
+	observer := &criticalObserver{}
+	svc.AddObserver(observer)
 	cert, err := svc.CreateCertificate(context.Background(), " Lab-TLS.lab.local ", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cert.Domain != "lab-tls.lab.local" || cert.Port != 443 || cert.Status != domain.CertCritical || *cert.DaysLeft != 5 {
 		t.Fatalf("unexpected certificate: %+v", cert)
+	}
+	if observer.calls != 1 {
+		t.Fatalf("expected one certificate.critical event, got %d", observer.calls)
 	}
 	if _, err := svc.CreateCertificate(context.Background(), "no valido/x", 443); !errors.Is(err, domain.ErrValidation) {
 		t.Fatalf("invalid domain: %v", err)
@@ -135,3 +140,7 @@ func TestManualDeployValidation(t *testing.T) {
 		t.Fatalf("unexpected deploy: %+v", got)
 	}
 }
+
+type criticalObserver struct{ calls int }
+
+func (o *criticalObserver) OnCertificateCritical(context.Context, domain.Certificate) { o.calls++ }

@@ -12,6 +12,7 @@ ABM y consulta de servidores y de los servicios que corren en ellos, con búsque
 ## Reglas de negocio
 - RN-1 `hostname` único entre servidores no eliminados (409).
 - RN-2 `ip` debe ser IPv4 o IPv6 válida (400).
+- RN-2b `ip` única entre servidores activos (409, `details[].field = "ip"`) y `os` obligatorio (400). Se valida en el servicio, no con un índice, para no romper bases con datos previos.
 - RN-3 `environment` ∈ {prod, staging, dev}; `location` ∈ {onprem, cloud}.
 - RN-4 `port` entre 1 y 65535.
 - RN-5 Servicio: `type` ∈ {web, db, queue, other}; `check_type` ∈ {http, tcp}. Si es `http`, `check_target` es una URL válida y `expected_status` (default 200).

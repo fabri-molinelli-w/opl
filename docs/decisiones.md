@@ -19,10 +19,10 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 - **Decisión:** SQL escrito a mano + código Go tipado generado por sqlc, sobre pgx v5.
 - **Motivo:** el agente ve el SQL real y los tipos generados; no puede inventar columnas sin que falle la generación.
 
-## ADR-004 · OPLBot como servicio Python separado
+## ADR-004 · OPSBot como servicio Python separado
 - **Fecha:** 2026-10-17
 - **Decisión:** FastAPI + LangChain en contenedor propio, sin puerto público. Tools de solo lectura que llaman al backend con el JWT del usuario.
-- **Motivo:** LangChain es Python (requisito del curso) y así OPLBot hereda los permisos del usuario sin duplicar lógica.
+- **Motivo:** LangChain es Python (requisito del curso) y así OPSBot hereda los permisos del usuario sin duplicar lógica.
 
 ## ADR-005 · Embeddings locales
 - **Fecha:** 2026-10-17
@@ -31,7 +31,7 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 
 ## ADR-006 · Numeración de casos de uso
 - **Fecha:** 2026-10-17
-- **Decisión:** se usa la numeración de la presentación del proyecto OPL (PDF del grupo 17): CU-01 Auth, CU-02 Inventario, CU-03 Monitoreo de servicios e incidentes, CU-04 Dashboard, CU-05 Runbooks, CU-06 Certificados, CU-07 Deploys, CU-08 Notificaciones, CU-09 OPLBot, CU-10 Gestión de incidentes.
+- **Decisión:** se usa la numeración de la presentación del proyecto OPL (PDF del grupo 17): CU-01 Auth, CU-02 Inventario, CU-03 Monitoreo de servicios e incidentes, CU-04 Dashboard, CU-05 Runbooks, CU-06 Certificados, CU-07 Deploys, CU-08 Notificaciones, CU-09 OPSBot, CU-10 Gestión de incidentes.
 - **Motivo:** ese documento es la definición propia del proyecto; specs, issues y ramas usan la misma numeración.
 
 ## ADR-007 · MCP del proyecto
@@ -52,7 +52,7 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
 ## ADR-010 · Documentación como foco de la primera etapa
 - **Fecha:** 2026-10-17
 - **Decisión:** el módulo de runbooks se amplía a una base de documentación con categorías, etiquetas, versiones y vínculos al inventario. Junto con el dashboard es la prioridad de la Fase 1.
-- **Motivo:** es el problema más concreto del área (procedimientos dispersos en archivos Word) y la base que después usa OPLBot.
+- **Motivo:** es el problema más concreto del área (procedimientos dispersos en archivos Word) y la base que después usa OPSBot.
 
 ## ADR-011 · Producción en Debian con Docker Compose
 - **Fecha:** 2026-10-17
@@ -144,3 +144,16 @@ Formato: una entrada por decisión. No se borran; si cambian, se agrega una nuev
   pregunta que usara una tool fallaba. Se detectó al probar con el LLM real: "hola" respondía y "¿cómo reinicio
   Nginx?" no.
 
+
+## ADR-026 · Cierre: certificados, deploys y despliegue con Docker
+- **Fecha:** 2026-11-07
+- **Decisión:**
+  - El chequeo diario de certificados reutiliza el ciclo horario del scheduler (ADR-024): cada hora se vuelven a chequear
+    los que tienen más de 24 h. No se agrega `robfig/cron`.
+  - El webhook de deploys es una operación pública de la política (sin JWT) y se autentica con `X-Deploy-Token`
+    comparado en tiempo constante; sin token configurado queda deshabilitado (401).
+  - Se agregan imágenes Docker de los 3 servicios. En `docker-compose.yml` van en el perfil `app`, así
+    `docker compose up -d` sigue levantando solo base + laboratorios para el desarrollo con `make run-*`.
+    `docker-compose.prod.yml` no tiene laboratorios ni puertos de base; HTTPS lo termina el reverse proxy del host.
+- **Motivo:** el alcance mínimo para entregar a tiempo, sin dependencias nuevas, y sin cambiar el flujo de la demo.
+  El CI construye las imágenes (job `docker`) porque el entorno del agente no tiene Docker.

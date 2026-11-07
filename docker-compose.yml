@@ -1,5 +1,9 @@
 name: opl
 
+# Desarrollo (igual que antes): `docker compose up -d` levanta postgres + laboratorios y se usa
+#   make run-backend / make run-ai / make run-frontend.
+# Todo en contenedores (perfil app): `docker compose --profile app up -d --build` → http://localhost:8088
+#   (no correr a la vez que make run-backend: ambos usan el puerto 8080).
 services:
   postgres:
     image: postgres:18
@@ -19,6 +23,45 @@ services:
       retries: 5
       start_period: 10s
 
+  backend:
+    build: ./backend
+    profiles: [app]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      HTTP_PORT: "8080"
+      AI_SERVICE_URL: http://ai-service:8000
+      # Seed dentro de la red de compose: docker compose run --rm --entrypoint /usr/local/bin/seed backend
+      LAB_TARGET_URL: http://lab-nginx/health
+      LAB_TLS_HOST: lab-tls
+      LAB_TLS_PORT: "443"
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai-service:
+    build: ./ai-service
+    profiles: [app]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BACKEND_URL: http://backend:8080
+    volumes:
+      - aidata:/data
+    # Sin puertos publicados: solo el backend lo llama por la red interna.
+
+  frontend:
+    build: ./frontend
+    profiles: [app]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    depends_on:
+      - backend
+
   # Laboratorio para la demo (CU-03/CU-10): detenerlo con `docker compose stop lab-nginx`
   # hace que su servicio pase a DOWN y, tras N chequeos, se abra un incidente automático.
   lab-nginx:
@@ -29,5 +72,18 @@ services:
     volumes:
       - ./lab/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
+  # Laboratorio CU-06: HTTPS con certificado autofirmado que vence en LAB_CERT_DAYS días.
+  lab-tls:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/lab/tls-entrypoint.sh"]
+    environment:
+      LAB_CERT_DAYS: ${LAB_CERT_DAYS:-20}
+    ports:
+      - "127.0.0.1:8443:443"
+    volumes:
+      - ./lab/tls-entrypoint.sh:/lab/tls-entrypoint.sh:ro
+
 volumes:
   pgdata:
+  aidata:

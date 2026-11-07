@@ -17,4 +17,5 @@ export const NotificationEventType = {
   incidentopened: 'incident.opened',
   incidentassigned: 'incident.assigned',
   documentupdated: 'document.updated',
+  certificatecritical: 'certificate.critical',
 } as const;

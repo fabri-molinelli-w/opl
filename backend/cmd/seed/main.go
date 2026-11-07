@@ -104,7 +104,7 @@ func run() error {
 			tags: []string{"lab", "demo"},
 			services: []seedService{
 				{name: "lab-nginx", serviceType: "web", port: 8081, checkType: "http",
-					checkTarget: "http://localhost:8081/health", expectedStatus: 200,
+					checkTarget: envOr("LAB_TARGET_URL", "http://localhost:8081/health"), expectedStatus: 200,
 					intervalSeconds: 10, latencyThresholdMs: 500, currentStatus: "UNKNOWN", monitored: true},
 			},
 		},
@@ -172,5 +172,37 @@ func run() error {
 		}
 		fmt.Printf("seeded %s\n", server.hostname)
 	}
+	if err := seedReleases(ctx, pool); err != nil {
+		return err
+	}
 	return seedDocuments(ctx, pool)
+}
+
+func envOr(name, def string) string {
+	if v := strings.TrimSpace(os.Getenv(name)); v != "" {
+		return v
+	}
+	return def
+}
+
+// seedReleases deja el certificado del laboratorio TLS (CU-06) y un deploy de ejemplo (CU-07).
+func seedReleases(ctx context.Context, pool *pgxpool.Pool) error {
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO certificates (domain, port) VALUES ($1, $2)
+		ON CONFLICT (lower(domain), port) DO NOTHING`,
+		envOr("LAB_TLS_HOST", "localhost"), envOr("LAB_TLS_PORT", "8443"),
+	); err != nil {
+		return fmt.Errorf("seed certificate: %w", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO deploys (service_id, version, environment, author, result, notes, source, deployed_at)
+		SELECT s.id, 'v1.0.0', 'dev', 'Laboratorio OPL', 'success', 'Deploy inicial (dato de ejemplo)', 'manual', now() - interval '2 hours'
+		FROM services s
+		WHERE s.name = 'lab-nginx' AND s.deleted_at IS NULL
+		  AND NOT EXISTS (SELECT 1 FROM deploys d WHERE d.service_id = s.id)`,
+	); err != nil {
+		return fmt.Errorf("seed deploy: %w", err)
+	}
+	fmt.Println("seeded certificates and deploys")
+	return nil
 }

@@ -1,4 +1,4 @@
-# CU-09 · Asistente inteligente OPLBot
+# CU-09 · Asistente inteligente OPSBot
 
 | Campo | Valor |
 |---|---|

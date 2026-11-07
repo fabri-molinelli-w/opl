@@ -39,3 +39,6 @@ Registrar acá los prompts que produjeron cambios relevantes. Un archivo por cas
 |---|---|---|---|
 | Fase 0 | | | |
 | CU-01 | | | |
+| CU-02 | | | OpenCode Zen |
+| CU-05, CU-09, CU-03, CU-10, CU-04, CU-08 | Claude Opus (`claude-opus-5-5`) | Claude Opus | Claude Code (ADR-021), bitácoras 09–13 |
+| CU-06, CU-07, Docker, Fase 5 | Claude Opus (`claude-opus-5-5`) | Claude Opus | Claude Code, bitácora 14 |

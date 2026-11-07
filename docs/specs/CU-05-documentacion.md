@@ -8,7 +8,7 @@
 
 ## Descripción
 Repositorio central de la documentación del área: procedimientos para resolver problemas, guías de instalación, configuraciones, notas de referencia. Reemplaza los Word sueltos y los procedimientos
-"en la cabeza de alguien". Más adelante alimenta a OPLBot (CU-09).
+"en la cabeza de alguien". Más adelante alimenta a OPSBot (CU-09).
 
 ## Conceptos
 - **Documento**: título + contenido en Markdown + categoría + etiquetas.
@@ -28,7 +28,7 @@ Repositorio central de la documentación del área: procedimientos para resolver
 - RN-9 Bloqueo optimista: el PATCH puede incluir la `version` editada; si no coincide con la actual → 409 (`details[].field = "version"`).
 - RN-10 El Markdown se renderiza sin HTML crudo (sin `rehype-raw` ni `dangerouslySetInnerHTML`). Los links `javascript:` no se ejecutan.
 - RN-11 Contenido de hasta 200 KB; hasta 20 etiquetas de hasta 40 caracteres, normalizadas a minúsculas y sin duplicados.
-- RN-8 (Fase OPLBot) Al crear/editar/eliminar se avisa al ai-service para reindexar. Si no responde, se guarda igual con `index_status = 'pending'`.
+- RN-8 (Fase OPSBot) Al crear/editar/eliminar se avisa al ai-service para reindexar. Si no responde, se guarda igual con `index_status = 'pending'`.
 
 ## Modelo de datos
 - `documents(id, title, content_md text, category text check in (...), tags text[], version int default 1, created_by fk users, updated_by fk users, created_at, updated_at, deleted_at)` — migración `00005`
