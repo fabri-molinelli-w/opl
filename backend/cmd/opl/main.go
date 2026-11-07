@@ -90,6 +90,11 @@ func run(log *slog.Logger) error {
 	monitoringService.AddObserver(notificationService)
 	incidentService.AddObserver(notificationService)
 	documentService.AddObserver(notificationService)
+	releaseService := service.NewReleaseService(repository.NewReleaseRepository(queries), service.ReadTLSCertificate, cfg.DeployWebhookToken, log)
+	releaseService.AddObserver(notificationService)
+	if cfg.DeployWebhookToken == "" {
+		log.Warn("deploy webhook disabled: DEPLOY_WEBHOOK_TOKEN not set")
+	}
 
 	if err := authService.EnsureAdminBootstrap(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return fmt.Errorf("failed to bootstrap admin user: %w", err)
@@ -107,6 +112,7 @@ func run(log *slog.Logger) error {
 		Incidents:     incidentService,
 		Dashboard:     repository.NewDashboardRepository(queries),
 		Notifications: notificationService,
+		Releases:      releaseService,
 		Log:           log,
 	})
 	authorize := auth.Authorize(auth.NewPolicy(), tokens, userRepo)
@@ -138,6 +144,10 @@ func run(log *slog.Logger) error {
 			func(ctx context.Context, now time.Time) error {
 				if err := notificationService.CleanUp(ctx, now); err != nil {
 					log.Error("notification cleanup failed", "error", err)
+				}
+				// CU-06 RN-3: chequeo diario de certificados (cada hora se revisan los que tienen > 24 h).
+				if err := releaseService.CheckDueCertificates(ctx, now); err != nil {
+					log.Error("certificate check failed", "error", err)
 				}
 				return monitoringService.CleanUp(ctx, now)
 			},

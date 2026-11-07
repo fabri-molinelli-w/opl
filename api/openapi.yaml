@@ -20,6 +20,8 @@ tags:
   - name: incidents
   - name: dashboard
   - name: notifications
+  - name: certificates
+  - name: deploys
 
 paths:
   /api/health:
@@ -995,6 +997,173 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/certificates:
+    get:
+      tags: [certificates]
+      operationId: listCertificates
+      summary: Certificados SSL vigilados, ordenados por días restantes (CU-06)
+      x-min-role: soporte
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/CertificateStatus" }
+      responses:
+        "200":
+          description: Certificados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Certificate" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [certificates]
+      operationId: createCertificate
+      summary: Agrega un dominio a vigilar y lo chequea en el momento (CU-06)
+      x-min-role: sysadmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCertificateRequest" }
+      responses:
+        "201":
+          description: Creado y chequeado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certificate" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/certificates/{id}:
+    delete:
+      tags: [certificates]
+      operationId: deleteCertificate
+      summary: Deja de vigilar un dominio (CU-06)
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Eliminado
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/certificates/{id}/check:
+    post:
+      tags: [certificates]
+      operationId: checkCertificate
+      summary: Vuelve a chequear el certificado ahora (CU-06)
+      x-min-role: sysadmin
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Resultado del chequeo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certificate" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/deploys:
+    get:
+      tags: [deploys]
+      operationId: listDeploys
+      summary: Historial de deploys (últimos 100) con filtros (CU-07)
+      x-min-role: soporte
+      parameters:
+        - name: serviceId
+          in: query
+          schema: { type: string }
+        - name: environment
+          in: query
+          schema: { $ref: "#/components/schemas/Environment" }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Deploys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Deploy" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [deploys]
+      operationId: createDeploy
+      summary: Registra un deploy manualmente (CU-07)
+      x-min-role: sysadmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDeployRequest" }
+      responses:
+        "201":
+          description: Registrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeployCreated" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/deploys/webhook:
+    post:
+      tags: [deploys]
+      operationId: receiveDeployWebhook
+      summary: Webhook del pipeline de CI/CD (CU-07). Autenticado con X-Deploy-Token, no con JWT.
+      security: []
+      parameters:
+        - name: X-Deploy-Token
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeployWebhookRequest" }
+      responses:
+        "201":
+          description: Registrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeployCreated" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Los endpoints de cada caso de uso se agregan acá siguiendo docs/specs/
   # y el skill endpoint-spec-first.
 
@@ -1912,7 +2081,7 @@ components:
 
     NotificationEventType:
       type: string
-      enum: [service.down, incident.opened, incident.assigned, document.updated]
+      enum: [service.down, incident.opened, incident.assigned, document.updated, certificate.critical]
 
     Notification:
       type: object
@@ -1933,6 +2102,83 @@ components:
       required: [count]
       properties:
         count: { type: integer }
+
+    CertificateStatus:
+      type: string
+      enum: [unknown, ok, warning, critical]
+
+    Certificate:
+      type: object
+      required: [id, domain, port, issuer, status, createdAt]
+      properties:
+        id: { type: string }
+        domain: { type: string }
+        port: { type: integer }
+        issuer: { type: string }
+        notAfter: { type: string, format: date-time }
+        daysLeft: { type: integer }
+        status: { $ref: "#/components/schemas/CertificateStatus" }
+        error:
+          type: string
+          description: Motivo del último chequeo fallido (status unknown)
+        lastCheckedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    CreateCertificateRequest:
+      type: object
+      required: [domain]
+      properties:
+        domain: { type: string, example: lab-tls.lab.local }
+        port: { type: integer, minimum: 1, maximum: 65535, default: 443 }
+
+    DeployResult:
+      type: string
+      enum: [success, failed, rollback]
+
+    Deploy:
+      type: object
+      required: [id, serviceId, serviceName, version, environment, author, result, notes, source, deployedAt]
+      properties:
+        id: { type: string }
+        serviceId: { type: string }
+        serviceName: { type: string }
+        version: { type: string }
+        environment: { $ref: "#/components/schemas/Environment" }
+        author: { type: string }
+        result: { $ref: "#/components/schemas/DeployResult" }
+        notes: { type: string }
+        source:
+          type: string
+          enum: [manual, webhook]
+        deployedAt: { type: string, format: date-time }
+
+    CreateDeployRequest:
+      type: object
+      required: [serviceId, version, result]
+      properties:
+        serviceId: { type: string }
+        version: { type: string, example: v1.4.2 }
+        author: { type: string }
+        result: { $ref: "#/components/schemas/DeployResult" }
+        notes: { type: string }
+        deployedAt: { type: string, format: date-time }
+
+    DeployWebhookRequest:
+      type: object
+      required: [serviceName, environment, version, result]
+      properties:
+        serviceName: { type: string, example: lab-nginx }
+        environment: { $ref: "#/components/schemas/Environment" }
+        version: { type: string, example: v1.4.2 }
+        author: { type: string }
+        result: { $ref: "#/components/schemas/DeployResult" }
+        notes: { type: string }
+
+    DeployCreated:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
 
   responses:
     BadRequest:

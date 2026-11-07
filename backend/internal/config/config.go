@@ -36,6 +36,8 @@ type Config struct {
 	HealthcheckEnabled         bool
 	HealthcheckWorkers         int
 	HealthcheckFailsToIncident int
+	// CU-07: token compartido del webhook de deploys (vacío = webhook deshabilitado).
+	DeployWebhookToken string
 }
 
 func Load() (Config, error) {
@@ -79,6 +81,8 @@ func Load() (Config, error) {
 		HealthcheckEnabled:         strings.TrimSpace(os.Getenv("HEALTHCHECK_ENABLED")) != "false",
 		HealthcheckWorkers:         intEnv("HEALTHCHECK_WORKERS", 10),
 		HealthcheckFailsToIncident: intEnv("HEALTHCHECK_FAILS_TO_INCIDENT", 3),
+
+		DeployWebhookToken: strings.TrimSpace(os.Getenv("DEPLOY_WEBHOOK_TOKEN")),
 	}, nil
 }
 

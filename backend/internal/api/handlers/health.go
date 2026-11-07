@@ -14,14 +14,14 @@ func (s *Server) GetHealth(ctx context.Context, _ gen.GetHealthRequestObject) (g
 		s.log.Error("database ping failed", "request_id", reqID, "error", err)
 		return gen.GetHealth503JSONResponse{
 			ServiceUnavailableJSONResponse: gen.ServiceUnavailableJSONResponse{
-				Status:   gen.Degraded,
+				Status:   gen.HealthStatusDegraded,
 				Database: gen.Down,
 			},
 		}, nil
 	}
 
 	return gen.GetHealth200JSONResponse{
-		Status:   gen.Ok,
+		Status:   gen.HealthStatusOk,
 		Database: gen.Up,
 	}, nil
 }

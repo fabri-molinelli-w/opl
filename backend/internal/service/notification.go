@@ -184,3 +184,26 @@ func (s *NotificationService) OnDocumentUpdated(_ context.Context, doc domain.Do
 		return err
 	})
 }
+
+// OnCertificateCritical implements CertificateObserver (CU-06 RN-5): aviso a sysadmin/admin,
+// una sola vez por certificado y fecha de vencimiento.
+func (s *NotificationService) OnCertificateCritical(_ context.Context, cert domain.Certificate) {
+	s.emit(domain.EventCertCritical, func(ctx context.Context) error {
+		days := 0
+		if cert.DaysLeft != nil {
+			days = *cert.DaysLeft
+		}
+		expiry := ""
+		if cert.NotAfter != nil {
+			expiry = cert.NotAfter.Format("2006-01-02")
+		}
+		_, err := s.repo.NotifyRoles(ctx, []string{string(domain.RoleSysadmin), string(domain.RoleAdmin)}, domain.NewNotification{
+			EventType: domain.EventCertCritical,
+			Title:     fmt.Sprintf("Certificado de %s por vencer", cert.Domain),
+			Body:      fmt.Sprintf("Quedan %d día(s) (vence %s).", days, expiry),
+			Link:      "/certificados",
+			DedupeKey: "certificate.critical:" + cert.ID + ":" + expiry,
+		})
+		return err
+	})
+}

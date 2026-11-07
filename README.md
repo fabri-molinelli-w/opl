@@ -27,14 +27,14 @@ ChromaDB) con el estado actual del sistema (tools de solo lectura).
 |---|---|---|
 | CU-01 | Autenticación y usuarios con roles (admin / sysadmin / soporte) | ✅ |
 | CU-02 | Inventario de servidores y servicios | ✅ |
+| CU-06 | Certificados SSL/TLS (vencimientos, aviso crítico) | ✅ |
+| CU-07 | Deploys: carga manual + webhook del pipeline | ✅ |
 | CU-03 | Monitoreo automático (health checks HTTP/TCP) | ✅ |
 | CU-04 | Dashboard (inventario, servicios, incidentes, disponibilidad 24 h, documentación) | ✅ |
 | CU-05 | Base de documentación (Markdown, búsqueda, versiones) | ✅ |
 | CU-08 | Notificaciones internas (campana) | ✅ (sin preferencias por usuario) |
 | CU-09 | OPSBot: chatbot con RAG + tools de solo lectura | ✅ |
-| CU-10 | Gestión de incidentes (automáticos y manuales) | ✅ (sin deploys ni post-mortem) |
-| CU-06 | Certificados SSL/TLS | ⬜ trabajo futuro |
-| CU-07 | Deploys y webhook | ⬜ trabajo futuro |
+| CU-10 | Gestión de incidentes (automáticos y manuales, con deploys previos) | ✅ (sin post-mortem) |
 
 ## Levantar el proyecto (desarrollo local)
 
@@ -42,7 +42,7 @@ Requisitos: Docker, Go (versión de `backend/go.mod`), Node 24 (`frontend/.nvmrc
 
 ```bash
 cp .env.example .env                    # completar valores (ver comentarios)
-docker compose up -d postgres lab-nginx # base + servicio de laboratorio
+docker compose up -d                    # base + laboratorios (lab-nginx, lab-tls)
 cd frontend && npm ci && cd ..
 make setup-ai                           # venv del ai-service (una sola vez)
 
@@ -57,6 +57,9 @@ make run-frontend                       # terminal 3 · http://localhost:5173
 - OPSBot usa cualquier LLM con API compatible con OpenAI y *tool calling* (Gemini, Groq, OpenCode Zen, Ollama):
   se configura con `LLM_BASE_URL`, `LLM_API_KEY` y `LLM_MODEL`. La primera consulta descarga el modelo de
   embeddings local (~220 MB).
+- Todo en contenedores (sin Go/Node/Python locales): `make up-all` → http://localhost:8088 y, una vez,
+  `make seed-docker`. No usar a la vez que `make run-backend` (puerto 8080).
+- Producción en Debian: [docs/instalacion-debian.md](docs/instalacion-debian.md) (`docker-compose.prod.yml`, HTTPS, backups).
 - Verificación completa: `make verify` (backend, frontend y ai-service) · `make test-integration` (PostgreSQL real).
 
 ## Demo end-to-end
@@ -67,6 +70,9 @@ make run-frontend                       # terminal 3 · http://localhost:5173
 4. OPSBot: "¿Hay incidentes abiertos?" y "¿Cómo reinicio Nginx?" → respuesta con fuentes (incidente y documento).
 5. `docker compose start lab-nginx` → vuelve a UP y la línea de tiempo registra la recuperación.
 6. Resolver el incidente: sin causa raíz devuelve 409; con causa raíz muestra el tiempo de resolución.
+7. Certificados: `lab-tls` aparece "por vencer" (20 días) en la pantalla y en la tarjeta del dashboard.
+8. Deploys: `make demo-deploy` simula el webhook del pipeline; el deploy aparece en **Deploys** y en el detalle
+   del incidente si ocurrió en las 24 h previas. Con un token incorrecto responde 401.
 
 ---
 
@@ -87,7 +93,8 @@ La bitácora de prompts está en [docs/prompts/](docs/prompts/).
 
 ### CI (GitHub Actions)
 Jobs `backend` (vet, golangci-lint, tests), `frontend` (lint, typecheck, tests, build), `ai-service` (ruff,
-mypy --strict, pytest) y `contract` (regenera el código desde `api/openapi.yaml` y falla si hay diferencias).
+mypy --strict, pytest), `contract` (regenera el código desde `api/openapi.yaml` y falla si hay diferencias) y
+`docker` (construye las 3 imágenes y valida los archivos de compose).
 
 ### Ingeniería de contexto
 - `AGENTS.md` raíz: stack, estructura, arquitectura en capas, mapeo de errores HTTP, reglas anti-alucinación, comandos de verificación.

@@ -61,6 +61,7 @@ type Deps struct {
 	Incidents     IncidentService
 	Dashboard     DashboardService
 	Notifications NotificationService
+	Releases      ReleaseService
 	Log           *slog.Logger
 }
 
@@ -78,6 +79,7 @@ type Server struct {
 	incidents     IncidentService
 	dashboard     DashboardService
 	notifications NotificationService
+	releases      ReleaseService
 	log           *slog.Logger
 }
 
@@ -94,6 +96,7 @@ func NewServer(deps Deps) *Server {
 		incidents:     deps.Incidents,
 		dashboard:     deps.Dashboard,
 		notifications: deps.Notifications,
+		releases:      deps.Releases,
 		log:           deps.Log,
 	}
 }

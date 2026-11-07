@@ -106,3 +106,20 @@ jobs:
         run: make generate
       - name: Fail if generated code is out of date
         run: git diff --exit-code
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build images
+        run: |
+          docker build -t opl-backend ./backend
+          docker build -t opl-frontend ./frontend
+          docker build -t opl-ai-service ./ai-service
+      - name: Validate compose files
+        run: |
+          cp .env.example .env
+          docker compose config -q
+          docker compose --profile app config -q
+          docker compose -f docker-compose.prod.yml config -q

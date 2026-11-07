@@ -72,6 +72,20 @@ async def test_every_tool_only_sends_get_requests() -> None:
             }
         ]
     }
+    certificates = [
+        {"domain": "web-01.example.com", "port": 443, "status": "warning", "daysLeft": 20, "issuer": "Lab CA"},
+    ]
+    deploys = [
+        {
+            "deployedAt": "2026-10-26T09:30:00Z",
+            "serviceName": "Portal",
+            "version": "v1.4.2",
+            "environment": "prod",
+            "result": "success",
+            "author": "ci",
+            "source": "webhook",
+        }
+    ]
     store = DocumentStore.in_memory(HashEmbedder())
     store.replace_document("doc-1", "Reiniciar Nginx", 1, [], "sudo systemctl reload nginx")
 
@@ -80,6 +94,8 @@ async def test_every_tool_only_sends_get_requests() -> None:
             router.get(f"{BACKEND}/api/servers").mock(return_value=httpx.Response(200, json=servers))
             router.get(f"{BACKEND}/api/services").mock(return_value=httpx.Response(200, json=services))
             router.get(f"{BACKEND}/api/incidents").mock(return_value=httpx.Response(200, json=incidents))
+            router.get(f"{BACKEND}/api/certificates").mock(return_value=httpx.Response(200, json=certificates))
+            router.get(f"{BACKEND}/api/deploys").mock(return_value=httpx.Response(200, json=deploys))
             sources = SourceCollector()
             tools = build_tools(BackendClient(http, BACKEND, "jwt"), store, sources, top_k=3)
             args: dict[str, dict[str, str]] = {
@@ -87,6 +103,8 @@ async def test_every_tool_only_sends_get_requests() -> None:
                 "estado_servicios": {"environment": "prod", "status": "DOWN"},
                 "buscar_servidores": {"texto": "web"},
                 "incidentes_activos": {},
+                "certificados_por_vencer": {},
+                "deploys_recientes": {"servicio": "portal"},
             }
             assert {t.name for t in tools} == set(args)
             for tool in tools:

@@ -25,6 +25,8 @@ type ServerRepository interface {
 	CountServers(ctx context.Context, filter domain.ServerFilter) (int64, error)
 	UpdateServer(ctx context.Context, id string, update domain.ServerUpdate) (domain.Server, error)
 	DeleteServer(ctx context.Context, id string) error
+	// IPInUse reports whether another non-deleted server has ip (excludeID "" = none).
+	IPInUse(ctx context.Context, ip, excludeID string) (bool, error)
 }
 
 // InventoryServiceRepository is the subset of the service repository used by
@@ -108,6 +110,10 @@ func (s *ServerService) Create(ctx context.Context, in CreateServerInput) (domai
 		return domain.Server{}, err
 	}
 
+	if err := s.ensureIPFree(ctx, server.IP, ""); err != nil {
+		return domain.Server{}, err
+	}
+
 	created, err := s.repo.CreateServer(ctx, server)
 	if err != nil {
 		if errors.Is(err, domain.ErrConflict) {
@@ -128,6 +134,12 @@ func (s *ServerService) Update(ctx context.Context, id string, update domain.Ser
 	normalized, err := normalizeServerUpdate(update)
 	if err != nil {
 		return domain.Server{}, err
+	}
+
+	if normalized.IP != nil {
+		if err := s.ensureIPFree(ctx, *normalized.IP, id); err != nil {
+			return domain.Server{}, err
+		}
 	}
 
 	updated, err := s.repo.UpdateServer(ctx, id, normalized)
@@ -174,11 +186,17 @@ func normalizeServer(server domain.Server) (domain.Server, error) {
 	if tags == nil {
 		tags = []string{}
 	}
+	os := strings.TrimSpace(server.OS)
+	if os == "" {
+		// RN-2b (CU-02): el sistema operativo es obligatorio.
+		return domain.Server{}, domain.NewFieldError(domain.ErrValidation, "El sistema operativo es obligatorio", "os", "obligatorio")
+	}
+
 	return domain.Server{
 		Hostname:    hostname,
 		IP:          ip,
 		Environment: environment,
-		OS:          strings.TrimSpace(server.OS),
+		OS:          os,
 		Location:    location,
 		Owner:       strings.TrimSpace(server.Owner),
 		Tags:        tags,
@@ -218,6 +236,9 @@ func normalizeServerUpdate(update domain.ServerUpdate) (domain.ServerUpdate, err
 	}
 	if update.OS != nil {
 		os := strings.TrimSpace(*update.OS)
+		if os == "" {
+			return domain.ServerUpdate{}, domain.NewFieldError(domain.ErrValidation, "El sistema operativo es obligatorio", "os", "obligatorio")
+		}
 		update.OS = &os
 	}
 	if update.Owner != nil {
@@ -234,6 +255,18 @@ func normalizeHostname(hostname string) (string, error) {
 			domain.ErrValidation, "El hostname es obligatorio", "hostname", "no puede estar vacío")
 	}
 	return hostname, nil
+}
+
+// ensureIPFree applies RN-1b: the IP is unique among non-deleted servers (409).
+func (s *ServerService) ensureIPFree(ctx context.Context, ip, excludeID string) error {
+	inUse, err := s.repo.IPInUse(ctx, ip, excludeID)
+	if err != nil {
+		return fmt.Errorf("check server ip: %w", err)
+	}
+	if inUse {
+		return domain.NewFieldError(domain.ErrConflict, "Ya existe un servidor con esa IP", "ip", "IP duplicada")
+	}
+	return nil
 }
 
 func normalizeIP(raw string) (string, error) {

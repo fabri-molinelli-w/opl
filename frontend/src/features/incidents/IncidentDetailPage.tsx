@@ -12,6 +12,7 @@ import {
 import type { Incident, IncidentStatus } from '@/api/gen/model'
 import { isApiError } from '@/api/http'
 import { useAuth } from '@/auth/useAuth'
+import { RecentDeploys } from '@/features/releases/DeploysPage'
 import { SEVERITY_STYLES, STATUS_LABELS, STATUS_STYLES, TRANSITION_LABELS, formatDateTime } from './labels'
 
 const EVENT_STYLES: Record<string, string> = {
@@ -108,6 +109,10 @@ const IncidentDetail = ({ incident }: { incident: Incident }) => {
             {incident.rootCause !== '' && <Item label="Causa raíz" value={incident.rootCause} />}
           </dl>
         </div>
+
+        {incident.serviceId !== undefined && incident.serviceId !== '' && (
+          <RecentDeploys serviceId={incident.serviceId} openedAt={incident.openedAt} />
+        )}
 
         <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="font-semibold">Línea de tiempo</h2>

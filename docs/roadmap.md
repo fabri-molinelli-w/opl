@@ -38,7 +38,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 | ✅ | CU-04 | Dashboard etapa 2 (estado de servicios, incidentes, gráficos 24 h) |
 | ✅ | CU-08 | Notificaciones internas (campana; preferencias por usuario pendientes) |
 
-## Fase 3 — OPLBot
+## Fase 3 — OPSBot
 
 | Estado | CU | Tarea |
 |---|---|---|
@@ -52,20 +52,25 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ terminado
 
 | Estado | CU | Tarea |
 |---|---|---|
-| ⬜ | CU-06 | Certificados SSL/TLS |
-| ⬜ | CU-07 | Deploys + webhook |
+| ✅ | CU-06 | Certificados SSL/TLS (laboratorio `lab-tls`, aviso `certificate.critical`) |
+| ✅ | CU-07 | Deploys + webhook (deploys de las 24 h previas en el detalle del incidente) |
+| ✅ | — | Docker Compose completo: imágenes de backend, frontend y ai-service (perfil `app`) |
 
 ## Fase 5 — Puesta en producción (Debian)
 
 | Estado | Tarea |
 |---|---|
-| ⬜ | `docker-compose.prod.yml` sin laboratorio, reverse proxy con HTTPS |
-| ⬜ | Backup diario de PostgreSQL y procedimiento de restauración documentado en OPL |
-| ⬜ | Guía de instalación en `docs/instalacion-debian.md` |
+| ✅ | `docker-compose.prod.yml` sin laboratorio, reverse proxy con HTTPS |
+| ✅ | Backup diario de PostgreSQL (`scripts/backup-postgres.sh`) y procedimiento de restauración |
+| ✅ | Guía de instalación en `docs/instalacion-debian.md` |
 
 ## Extras
 
-- Migrar OPLBot a LangGraph con paso de verificación.
+- Post-mortem de incidentes (CU-10) y preferencias de notificación por usuario (CU-08).
+- Certificado creado desde un servicio HTTPS existente (CU-06 RN-4).
+- Responsable del servidor elegido de una lista de usuarios (CU-02).
+
+- Migrar OPSBot a LangGraph con paso de verificación.
 - Vínculos de documentos con servidores/servicios (`document_links`) y listado en la ficha.
 - Búsqueda con `pg_trgm` / `tsvector` (ADR-020).
 - Adjuntos en documentos (PDF, imágenes).

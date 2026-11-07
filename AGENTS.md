@@ -11,7 +11,7 @@ health checks, incidentes, certificados SSL/TLS, registro de deploys y notificac
 
 **Foco de la etapa actual:** documentación (CU-05) y dashboard (CU-04).
 
-**Destino de producción:** servidor Debian con Docker Compose, en la red interna de la empresa. Incluye **OPLBot**, un asistente
+**Destino de producción:** servidor Debian con Docker Compose, en la red interna de la empresa. Incluye **OPSBot**, un asistente
 (LangChain + RAG sobre la documentación) que **solo consulta** datos, nunca los modifica.
 
 - Casos de uso: `docs/specs/CU-XX-*.md` (uno por archivo).
@@ -25,7 +25,7 @@ health checks, incidentes, certificados SSL/TLS, registro de deploys y notificac
 /api/openapi.yaml      Contrato OpenAPI 3 — FUENTE DE VERDAD de la API
 /backend               Go: API REST, auth, scheduler de health checks, notificaciones
 /frontend              React + TypeScript + Vite (SPA)
-/ai-service            Python: FastAPI + LangChain + ChromaDB (OPLBot) — red interna
+/ai-service            Python: FastAPI + LangChain + ChromaDB (OPSBot) — red interna
 /lab                   Servicios de laboratorio para la demo (nginx, api demo, https)
 /docs/specs            Especificaciones por caso de uso
 /docs/prompts          Bitácora de prompts relevantes
@@ -44,7 +44,7 @@ Cada servicio tiene su propio `AGENTS.md` con las convenciones del lenguaje. Se 
 | Contrato | OpenAPI 3.0 spec-first → oapi-codegen (servidor Go, modo strict) y Orval (cliente TS) |
 | Frontend | React + TypeScript strict + Vite, Tailwind CSS, Recharts, TanStack Query, React Router |
 | IA | Python 3.12, FastAPI, LangChain, ChromaDB, sentence-transformers (multilingual-e5-small) |
-| LLM OPLBot | Modelo gratuito de OpenCode Zen vía `ChatOpenAI` (endpoint compatible OpenAI), por env vars |
+| LLM OPSBot | Cualquier LLM con tools por env vars: `ChatOpenAI` (compatible OpenAI) o Gemini nativo (ADR-025) |
 | Base de datos | PostgreSQL |
 | Infra | Docker + Docker Compose, GitHub Actions |
 
@@ -125,7 +125,7 @@ Un cambio **no está terminado** hasta que la verificación del servicio afectad
 
 ## 10. Convenciones generales
 
-- Idioma: código, identificadores y commits en **inglés**; documentación, UI y respuestas de OPLBot en **español**.
+- Idioma: código, identificadores y commits en **inglés**; documentación, UI y respuestas de OPSBot en **español**.
 - Commits: Conventional Commits (`feat(backend): add server inventory endpoints`). Un caso de uso = una rama `feat/cu-XX-nombre`.
 - Fechas: UTC en base y API (RFC 3339); se formatean a hora local solo en el frontend.
 - Nombres de contrato: JSON y query params en **camelCase** (`pageSize`, `serverId`, `createdAt`); columnas y queries SQL en **snake_case**. El mapeo ocurre en handlers y repositorios.
@@ -140,7 +140,7 @@ Un cambio **no está terminado** hasta que la verificación del servicio afectad
 - Nunca leas ni escribas `.env`, claves (`*.pem`, `id_rsa*`) ni dumps. Usá `.env.example` como referencia.
 - Nunca escribas secretos en código, `opencode.json` ni docs. Todo secreto viene de variables de entorno.
 - Solo datos ficticios: IPs de rangos de documentación (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`), dominios `*.example.com` / `*.lab.local`.
-- OPLBot y sus tools son de **solo lectura**. Ninguna tool del agente puede hacer POST/PUT/PATCH/DELETE.
+- OPSBot y sus tools son de **solo lectura**. Ninguna tool del agente puede hacer POST/PUT/PATCH/DELETE.
 - OPL no ejecuta comandos remotos ni guarda credenciales de servidores.
 
 ## 12. MCP disponibles

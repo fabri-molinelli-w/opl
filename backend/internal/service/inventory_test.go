@@ -25,6 +25,11 @@ type fakeServerRepo struct {
 	deleteErr    error
 	lastCreated  domain.Server
 	lastServerID string
+	ipInUse      bool
+}
+
+func (f *fakeServerRepo) IPInUse(context.Context, string, string) (bool, error) {
+	return f.ipInUse, nil
 }
 
 func (f *fakeServerRepo) CreateServer(_ context.Context, server domain.Server) (domain.Server, error) {
@@ -160,7 +165,7 @@ func TestCreateServer_DuplicateHostnameConflict(t *testing.T) {
 	repo := &fakeServerRepo{createErr: domain.ErrConflict}
 	catalog := NewServerService(repo, fakeInventoryServices{}, discardLogger())
 	_, err := catalog.Create(context.Background(), CreateServerInput{
-		Hostname: "web-01", IP: "192.0.2.10", Environment: "prod",
+		Hostname: "web-01", IP: "192.0.2.10", Environment: "prod", OS: "debian-12",
 	})
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("expected ErrConflict, got %v", err)
@@ -285,5 +290,20 @@ func TestUpdateService_InvalidPort(t *testing.T) {
 	_, err := catalog.Update(context.Background(), "svc-1", domain.ServiceUpdate{Port: &port})
 	if !errors.Is(err, domain.ErrValidation) {
 		t.Fatalf("expected ErrValidation, got %v", err)
+	}
+}
+
+// RN-1b y RN-2b de CU-02.
+func TestCreateServerRejectsDuplicateIPAndMissingOS(t *testing.T) {
+	repo := &fakeServerRepo{ipInUse: true}
+	svc := NewServerService(repo, fakeInventoryServices{}, discardLogger())
+	_, err := svc.Create(context.Background(), CreateServerInput{Hostname: "web-09.example.com", IP: "192.0.2.10", Environment: "prod", OS: "debian-12"})
+	if fe := domain.FieldErrors(err); !errors.Is(err, domain.ErrConflict) || len(fe) != 1 || fe[0].Field != "ip" {
+		t.Fatalf("duplicate ip: expected 409 on ip, got %v", err)
+	}
+	repo.ipInUse = false
+	_, err = svc.Create(context.Background(), CreateServerInput{Hostname: "web-09.example.com", IP: "192.0.2.10", Environment: "prod", OS: "  "})
+	if fe := domain.FieldErrors(err); !errors.Is(err, domain.ErrValidation) || len(fe) != 1 || fe[0].Field != "os" {
+		t.Fatalf("missing os: expected 400 on os, got %v", err)
 	}
 }

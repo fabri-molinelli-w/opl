@@ -18,6 +18,8 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: '/documentacion', label: 'Documentación', end: false, minRole: 'soporte' },
   { to: '/incidentes', label: 'Incidentes', end: false, minRole: 'soporte' },
   { to: '/inventario', label: 'Inventario', end: false, minRole: 'soporte' },
+  { to: '/certificados', label: 'Certificados', end: false, minRole: 'soporte' },
+  { to: '/deploys', label: 'Deploys', end: false, minRole: 'soporte' },
   { to: '/usuarios', label: 'Usuarios', end: false, minRole: 'admin' },
   { to: '/mi-cuenta', label: 'Mi cuenta', end: false, minRole: 'soporte' },
 ]

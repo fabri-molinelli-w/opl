@@ -12,6 +12,8 @@ import { IncidentDetailPage } from '@/features/incidents/IncidentDetailPage'
 import { IncidentsPage } from '@/features/incidents/IncidentsPage'
 import { InventoryPage } from '@/features/inventory/InventoryPage'
 import { ServerDetailPage } from '@/features/inventory/ServerDetailPage'
+import { CertificatesPage } from '@/features/releases/CertificatesPage'
+import { DeploysPage } from '@/features/releases/DeploysPage'
 import { UsersPage } from '@/features/users/UsersPage'
 
 export const router = createBrowserRouter([
@@ -32,6 +34,8 @@ export const router = createBrowserRouter([
           { path: 'incidentes/:id', element: <IncidentDetailPage /> },
           { path: 'inventario', element: <InventoryPage /> },
           { path: 'inventario/:id', element: <ServerDetailPage /> },
+          { path: 'certificados', element: <CertificatesPage /> },
+          { path: 'deploys', element: <DeploysPage /> },
           { path: 'mi-cuenta', element: <AccountPage /> },
           {
             element: <RequireRole minRole="admin" />,

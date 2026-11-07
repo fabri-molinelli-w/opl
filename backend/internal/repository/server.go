@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
 
 	dbgen "github.com/fabri-molinelli-w/opl/backend/internal/db/gen"
 	"github.com/fabri-molinelli-w/opl/backend/internal/domain"
@@ -182,4 +183,24 @@ func toDomainServer(row dbgen.CreateServerRow) domain.Server {
 
 func textParam(value string) pgtype.Text {
 	return pgtype.Text{String: value, Valid: value != ""}
+}
+
+func (r *ServerRepository) IPInUse(ctx context.Context, ip, excludeID string) (bool, error) {
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return false, domain.NewFieldError(domain.ErrValidation, "La IP no es válida", "ip", "formato inválido")
+	}
+	params := dbgen.ServerIPInUseParams{Ip: addr}
+	if excludeID != "" {
+		id, err := uuidFromString(excludeID)
+		if err != nil {
+			return false, domain.ErrNotFound
+		}
+		params.ExcludeID = id
+	}
+	inUse, err := r.q.ServerIPInUse(ctx, params)
+	if err != nil {
+		return false, mapError(err)
+	}
+	return inUse, nil
 }

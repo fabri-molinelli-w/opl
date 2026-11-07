@@ -55,3 +55,12 @@ RETURNING id, hostname, host(ip) AS ip, environment, os, location, owner, tags, 
 UPDATE servers
 SET deleted_at = now(), updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: ServerIPInUse :one
+-- RN-1b (CU-02): la IP no se repite entre servidores no eliminados. Se valida en el service
+-- (no con un índice) para no romper bases que ya tengan IPs duplicadas cargadas.
+SELECT EXISTS (
+    SELECT 1 FROM servers
+    WHERE ip = sqlc.arg('ip')::inet AND deleted_at IS NULL
+      AND (sqlc.narg('exclude_id')::uuid IS NULL OR id <> sqlc.narg('exclude_id')::uuid)
+);

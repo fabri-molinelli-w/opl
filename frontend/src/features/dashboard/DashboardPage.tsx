@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useGetDashboardSummary } from '@/api/gen'
+import { useGetDashboardSummary, useListCertificates } from '@/api/gen'
 import type { DashboardSummary } from '@/api/gen/model'
 import { CATEGORY_LABELS, formatDate } from '@/features/documents/categories'
 import { SEVERITY_STYLES, STATUS_LABELS } from '@/features/incidents/labels'
@@ -54,6 +54,23 @@ const Panel = ({ title, children }: { title: string; children: ReactNode }) => (
   </div>
 )
 
+/** CU-06: certificados que vencen en <= 30 días (warning + critical). */
+const CertificatesCard = () => {
+  const certs = useListCertificates(undefined, { query: { refetchInterval: 60_000 } })
+  const items = certs.data?.status === 200 && Array.isArray(certs.data.data) ? certs.data.data : []
+  const critical = items.filter((c) => c.status === 'critical').length
+  const warning = items.filter((c) => c.status === 'warning').length
+  return (
+    <StatCard
+      label="Certificados por vencer"
+      value={critical + warning}
+      to="/certificados"
+      tone={critical > 0 ? 'red' : warning > 0 ? 'amber' : 'green'}
+      hint={`${critical} críticos (≤ 7 días) · ${warning} en ≤ 30 días`}
+    />
+  )
+}
+
 export const DashboardPage = () => {
   // RN-1: un solo request; refresco automático cada 30 s sin recargar (CA-2).
   const summary = useGetDashboardSummary({ query: { refetchInterval: 30_000 } })
@@ -83,7 +100,7 @@ const DashboardContent = ({ data }: { data: DashboardSummary }) => {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Servicios caídos"
           value={services.down}
@@ -111,6 +128,7 @@ const DashboardContent = ({ data }: { data: DashboardSummary }) => {
           to="/documentacion"
           hint={`${documents.updatedLast7Days} actualizados en los últimos 7 días`}
         />
+        <CertificatesCard />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">

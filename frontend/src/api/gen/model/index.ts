@@ -10,6 +10,8 @@
  */
 
 export * from './badRequestResponse.ts';
+export * from './certificate.ts';
+export * from './certificateStatus.ts';
 export * from './changePasswordRequest.ts';
 export * from './chatRequest.ts';
 export * from './chatResponse.ts';
@@ -17,6 +19,8 @@ export * from './chatSource.ts';
 export * from './chatSourceType.ts';
 export * from './checkType.ts';
 export * from './conflictResponse.ts';
+export * from './createCertificateRequest.ts';
+export * from './createDeployRequest.ts';
 export * from './createDocumentRequest.ts';
 export * from './createIncidentRequest.ts';
 export * from './createServerRequest.ts';
@@ -33,6 +37,11 @@ export * from './dashboardRecentIncident.ts';
 export * from './dashboardServers.ts';
 export * from './dashboardServices.ts';
 export * from './dashboardSummary.ts';
+export * from './deploy.ts';
+export * from './deployCreated.ts';
+export * from './deployResult.ts';
+export * from './deploySource.ts';
+export * from './deployWebhookRequest.ts';
 export * from './document.ts';
 export * from './documentCategory.ts';
 export * from './documentSort.ts';
@@ -55,6 +64,8 @@ export * from './incidentNoteRequest.ts';
 export * from './incidentStatus.ts';
 export * from './incidentSummary.ts';
 export * from './incidentTransitionRequest.ts';
+export * from './listCertificatesParams.ts';
+export * from './listDeploysParams.ts';
 export * from './listDocumentsParams.ts';
 export * from './listIncidentsParams.ts';
 export * from './listMyNotificationsParams.ts';

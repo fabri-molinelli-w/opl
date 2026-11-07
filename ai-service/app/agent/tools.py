@@ -117,9 +117,51 @@ def build_tools(client: BackendClient, store: DocumentStore, sources: SourceColl
             )
         return f"{len(items)} incidente(s) activo(s):\n" + "\n".join(lines)
 
+    async def certificados_por_vencer() -> str:
+        """Lista los certificados SSL vigilados que vencen pronto (warning <= 30 días, critical <= 7) o con error."""
+        try:
+            certs = await client.list_certificates()
+        except BackendError as exc:
+            return f"No se pudo consultar los certificados ({exc})."
+        risky = [c for c in certs if c["status"] != "ok"]
+        if not risky:
+            return f"Ningún certificado por vencer ({len(certs)} vigilado(s), todos OK)."
+        lines = [
+            f"- {c['domain']}:{c['port']} — {c['status']}, quedan {c.get('daysLeft', 'sin dato')} día(s), "
+            f"emisor {c['issuer'] or 'sin dato'}{(' — error: ' + c['error']) if c.get('error') else ''}"
+            for c in risky
+        ]
+        return f"{len(risky)} certificado(s) a atender:\n" + "\n".join(lines)
+
+    async def deploys_recientes(servicio: str | None = None, environment: Environment | None = None) -> str:
+        """Lista los últimos deploys (versión, resultado, autor, fecha).
+
+        Filtros opcionales: nombre de servicio y environment.
+        Útil para relacionar un incidente con un deploy reciente.
+        """
+        params: dict[str, str | int] = {}
+        if environment:
+            params["environment"] = environment
+        try:
+            deploys = await client.list_deploys(params)
+        except BackendError as exc:
+            return f"No se pudo consultar los deploys ({exc})."
+        if servicio:
+            deploys = [d for d in deploys if servicio.lower() in str(d["serviceName"]).lower()]
+        if not deploys:
+            return "No hay deploys registrados que coincidan."
+        lines = [
+            f"- {d['deployedAt']}: {d['serviceName']} {d['version']} en {d['environment']} — {d['result']} "
+            f"(autor {d['author'] or 'sin dato'}, origen {d['source']})"
+            for d in deploys[:20]
+        ]
+        return f"{len(lines)} deploy(s) más reciente(s):\n" + "\n".join(lines)
+
     return [
         StructuredTool.from_function(coroutine=buscar_documentacion, name="buscar_documentacion"),
         StructuredTool.from_function(coroutine=incidentes_activos, name="incidentes_activos"),
         StructuredTool.from_function(coroutine=estado_servicios, name="estado_servicios"),
         StructuredTool.from_function(coroutine=buscar_servidores, name="buscar_servidores"),
+        StructuredTool.from_function(coroutine=certificados_por_vencer, name="certificados_por_vencer"),
+        StructuredTool.from_function(coroutine=deploys_recientes, name="deploys_recientes"),
     ]

@@ -79,3 +79,19 @@ check-generated:
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
 	PATH="$$PATH:$$(go env GOPATH)/bin" $(MAKE) generate
 	git diff --exit-code -- backend/internal/api/gen backend/internal/db/gen frontend/src/api/gen backend/go.mod backend/go.sum
+
+# --- Docker (todo en contenedores) ---
+.PHONY: up-all seed-docker backup demo-deploy
+up-all:
+	docker compose --profile app up -d --build
+
+seed-docker:
+	docker compose --profile app run --rm --entrypoint /usr/local/bin/seed backend
+
+# Fase 5: backup de la base de producción (ver docs/instalacion-debian.md)
+backup:
+	./scripts/backup-postgres.sh
+
+# CU-07: simula el webhook del pipeline (SERVICE, ENV, VERSION, RESULT opcionales)
+demo-deploy:
+	./scripts/demo-deploy-webhook.sh $${SERVICE:-lab-nginx} $${ENV:-dev} $${VERSION:-v1.1.0} $${RESULT:-success}

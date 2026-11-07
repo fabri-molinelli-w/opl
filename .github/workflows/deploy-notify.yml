@@ -1,0 +1,41 @@
+name: Notificar deploy a OPL
+
+# Ejemplo de integración CU-07: al final de un pipeline de deploy se avisa a OPL por webhook.
+# Requiere los secrets OPL_URL (URL pública de OPL) y DEPLOY_WEBHOOK_TOKEN.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Nombre del servicio en OPL
+        default: lab-nginx
+      environment:
+        description: prod | staging | dev
+        default: dev
+      version:
+        description: Versión desplegada
+        default: v1.0.0
+      result:
+        description: success | failed | rollback
+        default: success
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/deploys/webhook
+        env:
+          OPL_URL: ${{ secrets.OPL_URL }}
+          TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+          SERVICE: ${{ inputs.service }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          VERSION: ${{ inputs.version }}
+          RESULT: ${{ inputs.result }}
+        run: |
+          body=$(jq -n --arg s "$SERVICE" --arg e "$ENVIRONMENT" --arg v "$VERSION" --arg r "$RESULT" \
+            --arg a "$GITHUB_ACTOR" --arg n "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            '{serviceName:$s, environment:$e, version:$v, result:$r, author:$a, notes:$n}')
+          curl -fsS -X POST "$OPL_URL/api/deploys/webhook" \
+            -H "Content-Type: application/json" -H "X-Deploy-Token: $TOKEN" -d "$body"
